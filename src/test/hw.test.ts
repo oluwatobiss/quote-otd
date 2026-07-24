@@ -19,7 +19,7 @@ import {
   syncWallet,
   type WalletSecret,
 } from "../wallet.js";
-import { buildProviders, type HelloWorldProviders } from "../providers.js";
+import { buildProviders, type QuoteOfTheDayProviders } from "../providers.js";
 import {
   CompiledHelloWorldContract,
   Contract,
@@ -84,7 +84,7 @@ function resolveSecret(net: string): WalletSecret {
 
 describe(`Hello World Contract (${network})`, () => {
   let wallet: MidnightWalletProvider;
-  let providers: HelloWorldProviders;
+  let providers: QuoteOfTheDayProviders;
   let contractAddress: ContractAddress;
 
   const config = getConfig();
@@ -95,7 +95,7 @@ describe(`Hello World Contract (${network})`, () => {
       (isRemote ? 60 * 60_000 : 10 * 60_000),
   );
 
-  async function queryLedger(p: HelloWorldProviders) {
+  async function queryLedger(p: QuoteOfTheDayProviders) {
     const state =
       await p.publicDataProvider.queryContractState(contractAddress);
     expect(state).not.toBeNull();

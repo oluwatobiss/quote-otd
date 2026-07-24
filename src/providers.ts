@@ -6,23 +6,23 @@ import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-pri
 import { type MidnightWalletProvider } from "./wallet.js";
 import { type NetworkConfig } from "./config.js";
 
-export type HelloWorldCircuits = "storeMessage";
+export type QuoteOfTheDayCircuits = "post" | "publicKey";
 
-export type HelloWorldProviders = MidnightProviders<any>;
+export type QuoteOfTheDayProviders = MidnightProviders<any>;
 
 export function buildProviders(
   wallet: MidnightWalletProvider,
   zkConfigPath: string,
   config: NetworkConfig,
-): HelloWorldProviders {
-  const zkConfigProvider = new NodeZkConfigProvider<HelloWorldCircuits>(
+): QuoteOfTheDayProviders {
+  const zkConfigProvider = new NodeZkConfigProvider<QuoteOfTheDayCircuits>(
     zkConfigPath,
   );
 
   return {
     privateStateProvider: levelPrivateStateProvider({
-      privateStateStoreName: `hello-world-${Date.now()}`,
-      privateStoragePasswordProvider: () => "Hello-World-Test-Password",
+      privateStateStoreName: `quote-otd-${Date.now()}`,
+      privateStoragePasswordProvider: () => "Quote-OTD-Test-Password",
       accountId: wallet.getCoinPublicKey(),
     }),
     publicDataProvider: indexerPublicDataProvider(
