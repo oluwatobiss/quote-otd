@@ -4,20 +4,18 @@ import CompactStandardLibrary;
 
 export sealed ledger owner: Bytes<32>;
 export ledger quoteOfTheDay: Opaque<"string">;
-export ledger sequence: Counter;
 
 witness localSecretKey(): Bytes<32>;
 
 constructor() {
-    owner = disclose(publicKey(localSecretKey(), sequence as Field as Bytes<32>));
+    owner = disclose(publicKey(localSecretKey()));
 }
 
 export circuit post(newQuote: Opaque<"string">): [] {
-    assert(owner == publicKey(localSecretKey(), sequence as Field as Bytes<32>), "Attempted to post, but not the owner");
+    assert(owner == publicKey(localSecretKey()), "Attempted to post, but not the owner");
     quoteOfTheDay = disclose(newQuote);
-    sequence.increment(1);
 }
 
-export circuit publicKey(sk: Bytes<32>, sequence: Bytes<32>): Bytes<32> {
-    return persistentHash<Vector<3, Bytes<32>>>([pad(32, "quoteotd:pk:"), sequence, sk]);
+export circuit publicKey(sk: Bytes<32>): Bytes<32> {
+    return persistentHash<Vector<2, Bytes<32>>>([pad(32, "quoteotd:pk:"), sk]);
 }
