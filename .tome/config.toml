@@ -1,0 +1,2 @@
+workspace = "midnight"
+harnesses = ["antigravity", "copilot-cli", "gemini"]
