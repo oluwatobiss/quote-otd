@@ -7,7 +7,7 @@
     "node": ">=24.11.1"
   },
   "scripts": {
-    "compile": "compact compile contracts/hello-world.compact contracts/managed/hello-world",
+    "compile": "compact compile contracts/quote-otd.compact contracts/managed/quote-otd",
     "test": "NODE_OPTIONS='--experimental-vm-modules' vitest run",
     "test:local": "MIDNIGHT_NETWORK=local npm test",
     "test:preview": "MIDNIGHT_NETWORK=preview npm test",
