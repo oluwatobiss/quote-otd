@@ -21,7 +21,7 @@ import {
 } from "../wallet.js";
 import { buildProviders, type QuoteOfTheDayProviders } from "../providers.js";
 import {
-  CompiledHelloWorldContract,
+  CompiledQuoteOfTheDayContract,
   Contract,
   ledger,
   zkConfigPath,
@@ -148,7 +148,7 @@ describe(`Hello World Contract (${network})`, () => {
     const deployed: DeployedContract<Contract> = await deployContract<Contract>(
       providers,
       {
-        compiledContract: CompiledHelloWorldContract,
+        compiledContract: CompiledQuoteOfTheDayContract,
         privateStateId: PRIVATE_STATE_ID,
         initialPrivateState: {},
       },
@@ -168,7 +168,7 @@ describe(`Hello World Contract (${network})`, () => {
     const message = "Hello World!";
 
     await submitCallTx<Contract, "storeMessage">(providers, {
-      compiledContract: CompiledHelloWorldContract,
+      compiledContract: CompiledQuoteOfTheDayContract,
       contractAddress,
       privateStateId: PRIVATE_STATE_ID,
       circuitId: "storeMessage",
