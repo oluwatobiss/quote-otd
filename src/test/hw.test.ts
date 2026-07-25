@@ -82,7 +82,7 @@ function resolveSecret(net: string): WalletSecret {
   );
 }
 
-describe(`Hello World Contract (${network})`, () => {
+describe(`Quote of The Day Contract (${network})`, () => {
   let wallet: MidnightWalletProvider;
   let providers: QuoteOfTheDayProviders;
   let contractAddress: ContractAddress;
@@ -161,21 +161,22 @@ describe(`Hello World Contract (${network})`, () => {
     expect(contractAddress.length).toBeGreaterThan(0);
 
     const state = await queryLedger(providers);
-    expect(state.message).toEqual("");
+    expect(state.quoteOfTheDay).toEqual("");
   });
 
-  it("Stores Hello World!", async () => {
-    const message = "Hello World!";
+  it("Stores New Quote", async () => {
+    const message =
+      "A quitter never wins—and—a winner never quits. — Napoleon Hill";
 
-    await submitCallTx<Contract, "storeMessage">(providers, {
+    await submitCallTx<Contract, "post">(providers, {
       compiledContract: CompiledQuoteOfTheDayContract,
       contractAddress,
       privateStateId: PRIVATE_STATE_ID,
-      circuitId: "storeMessage",
+      circuitId: "post",
       args: [message],
     });
 
     const state = await queryLedger(providers);
-    expect(state.message).toEqual(message);
+    expect(state.quoteOfTheDay).toEqual(message);
   });
 });
