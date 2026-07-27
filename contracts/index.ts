@@ -1,4 +1,5 @@
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
+import { witnesses } from "../src/witnesses.js";
 import path from "node:path";
 
 export {
@@ -18,6 +19,6 @@ export const CompiledQuoteOfTheDayContract = CompiledContract.make(
   "QuoteOfTheDayContract",
   Contract,
 ).pipe(
-  CompiledContract.withVacantWitnesses,
+  CompiledContract.withWitnesses(witnesses),
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );

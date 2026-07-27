@@ -27,6 +27,10 @@ import {
   zkConfigPath,
 } from "../../contracts/index.js";
 
+import { QuoteOTDSimulator } from "./quote-otd-simulator.js";
+import { randomBytes } from "./utils.js";
+import { createQuoteOTDPrivateState } from "../witnesses.js";
+
 // Required for GraphQL subscriptions in Node.js
 // @ts-expect-error WebSocket global assignment for apollo
 globalThis.WebSocket = WebSocket;
@@ -42,7 +46,7 @@ process.on("uncaughtException", (err) => {
 
 const ALICE_LOCAL_SEED =
   "0000000000000000000000000000000000000000000000000000000000000001";
-const PRIVATE_STATE_ID = "AlicePrivateHWState";
+const PRIVATE_STATE_ID = "AlicePrivateQuoteOTDState";
 
 const logger = pino({
   level: process.env["LOG_LEVEL"] ?? "info",
@@ -142,7 +146,7 @@ describe(`Quote of The Day Contract (${network})`, () => {
     }
   });
 
-  it("Deploys the contract", async () => {
+  it("deploys the contract", async () => {
     logger.info(`Creating private state...`);
 
     const deployed: DeployedContract<Contract> = await deployContract<Contract>(
@@ -150,33 +154,111 @@ describe(`Quote of The Day Contract (${network})`, () => {
       {
         compiledContract: CompiledQuoteOfTheDayContract,
         privateStateId: PRIVATE_STATE_ID,
-        initialPrivateState: {},
+        initialPrivateState: createQuoteOTDPrivateState(randomBytes(32)),
       },
     );
 
     logger.info(`Setting the contract address...`);
     contractAddress = deployed.deployTxData.public.contractAddress;
     logger.info(`Contract deployed at: ${contractAddress}`);
+
     expect(contractAddress).toBeDefined();
     expect(contractAddress.length).toBeGreaterThan(0);
 
-    const state = await queryLedger(providers);
-    expect(state.quoteOfTheDay).toEqual("");
+    const ledgerState = await queryLedger(providers);
+    expect(ledgerState.quoteOfTheDay).toEqual("");
   });
 
-  it("Stores New Quote", async () => {
-    const message =
-      "A quitter never wins—and—a winner never quits. — Napoleon Hill";
+  it("generates initial ledger state deterministically", () => {
+    const ownerSecretKey = randomBytes(32);
+    const simulator0 = new QuoteOTDSimulator(ownerSecretKey);
+    const simulator1 = new QuoteOTDSimulator(ownerSecretKey);
+    expect(simulator0.getLedger()).toEqual(simulator1.getLedger());
+  });
 
+  it("properly initializes ledger state and private state", () => {
+    const ownerSecretKey = randomBytes(32);
+    const simulator = new QuoteOTDSimulator(ownerSecretKey);
+    const initialLedgerState = simulator.getLedger();
+    const initialPublicKey = simulator.publicKey();
+    const initialPrivateState = simulator.getPrivateState();
+    expect(initialLedgerState.owner).toEqual(initialPublicKey);
+    expect(initialLedgerState.quoteOfTheDay).toEqual("");
+    expect(initialPrivateState).toEqual({ secretKey: ownerSecretKey });
+  });
+
+  it("lets the owner post via the Midnight network SDK", async () => {
+    const quote =
+      "A quitter never wins—and—a winner never quits. — Napoleon Hill";
     await submitCallTx<Contract, "post">(providers, {
       compiledContract: CompiledQuoteOfTheDayContract,
       contractAddress,
       privateStateId: PRIVATE_STATE_ID,
       circuitId: "post",
-      args: [message],
+      args: [quote],
     });
+    const ledgerState = await queryLedger(providers);
+    expect(ledgerState.quoteOfTheDay).toEqual(quote);
+  });
 
-    const state = await queryLedger(providers);
-    expect(state.quoteOfTheDay).toEqual(message);
+  it("lets the owner post in the local Compact simulator", () => {
+    const quote =
+      "A quitter never wins—and—a winner never quits. — Napoleon Hill";
+    const simulator = new QuoteOTDSimulator(randomBytes(32));
+    simulator.post(quote);
+    const ledgerState = simulator.getLedger();
+    expect(ledgerState.quoteOfTheDay).toEqual(quote);
+  });
+
+  it("lets owner post a new quote", () => {
+    const simulator = new QuoteOTDSimulator(randomBytes(32));
+    const initialPublicKey = simulator.publicKey();
+    const initialPrivateState = simulator.getPrivateState();
+    const quote =
+      "Szeth-son-son-Vallano, Truthless of Shinovar, wore white on the day he was to kill a king";
+    // post a new quote
+    simulator.post(quote);
+    // all the correct things should have been updated in the public ledger state
+    const ledgerState = simulator.getLedger();
+    // the private ledger state shouldn't change
+    expect(initialPrivateState).toEqual(simulator.getPrivateState());
+    expect(ledgerState.quoteOfTheDay).toEqual(quote);
+    expect(ledgerState.owner).toEqual(initialPublicKey);
+  });
+
+  it("lets owner post multiple times", () => {
+    const simulator = new QuoteOTDSimulator(randomBytes(32));
+    const initialPublicKey = simulator.publicKey();
+    const initialPrivateState = simulator.getPrivateState();
+    const quote1 =
+      "Szeth-son-son-Vallano, Truthless of Shinovar, wore white on the day he was to kill a king";
+    const quote2 =
+      "Prince Raoden of Arelon awoke early that morning, completely unaware that he had been damned for all eternity.";
+    // post first quote
+    simulator.post(quote1);
+    // all the correct things should have been updated in the public ledger state
+    const ledgerState1 = simulator.getLedger();
+    // the private ledger state shouldn't change
+    expect(initialPrivateState).toEqual(simulator.getPrivateState());
+    expect(ledgerState1.quoteOfTheDay).toEqual(quote1);
+    expect(ledgerState1.owner).toEqual(initialPublicKey);
+    // post second quote
+    simulator.post(quote2);
+    // all the correct things should have been updated in the public ledger state
+    const ledgerState2 = simulator.getLedger();
+    // the private ledger state shouldn't change
+    expect(initialPrivateState).toEqual(simulator.getPrivateState());
+    expect(ledgerState2.quoteOfTheDay).toEqual(quote2);
+    expect(ledgerState2.owner).toEqual(initialPublicKey);
+  });
+
+  it("doesn't let non-owner post", () => {
+    const simulator = new QuoteOTDSimulator(randomBytes(32));
+    simulator.switchUser(randomBytes(32));
+    expect(() =>
+      simulator.post(
+        "Sometimes a hypocrite is nothing more than a man in the process of changing.",
+      ),
+    ).toThrow("failed assert: Attempted to post, but not the owner");
   });
 });
