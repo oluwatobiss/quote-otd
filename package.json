@@ -1,5 +1,5 @@
 {
-  "name": "mn-lvl-001",
+  "name": "quote-otd",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,7 +16,7 @@
     "env:down": "docker compose down",
     "proof:up": "docker compose up -d --wait proof-server",
     "proof:down": "docker compose stop proof-server",
-    "validate": "npm env:up && npm test:local; npm env:down"
+    "validate": "npm run env:up && npm run test:local && npm run env:down"
   },
   "dependencies": {
     "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
