@@ -2,10 +2,14 @@ pragma language_version 0.23;
 
 import CompactStandardLibrary;
 
+// The owner and quoteOfTheDay ledgers are public, on-chain states that can be read by anyone, but only the owner of the smart contract can update the quoteOfTheDay ledger. The owner is determined by the localSecretKey witness, which is only known to the smart contract owner. A sealed ledger means that the value can only be set once-during the construction of the smart contract, and cannot be modified afterwards.
 export sealed ledger owner: Bytes<32>;
 export ledger quoteOfTheDay: Opaque<"string">;
 
+// The localSecretKey witness is a private, off-chain function that allows the smart contract owner to provide their secret key to prove ownership of the contract without exposing the sensitive information to the public. The localSecretKey witness is never revealed on-chain, and is only used to generate the public key that is stored in the owner ledger.
 witness localSecretKey(): Bytes<32>;
+
+// The disclose() method is used to intentionally disclose the public key and the quoteOfTheDay text to the public without revealing the localSecretKey witness.
 
 constructor() {
     owner = disclose(publicKey(localSecretKey()));
