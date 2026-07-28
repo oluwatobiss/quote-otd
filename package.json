@@ -18,9 +18,16 @@
     "proof:down": "docker compose stop proof-server",
     "validate": "npm run env:up && npm run test:local && npm run env:down",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "rm -rf ./dist && tsc && vite build --mode preprod && cp -r contracts/managed/quote-otd/keys ./dist/keys && cp -r contracts/managed/quote-otd/zkir ./dist/zkir",
+    "build:preview": "rm -rf ./dist && tsc && vite build --mode preview && cp -r contracts/managed/quote-otd/keys ./dist/keys && cp -r contracts/managed/quote-otd/zkir ./dist/zkir",
+    "build:start": "npm run build && npm run start",
+    "build:start:preview": "npm run build:preview && npm run start",
+    "ci": "npm run typecheck && npm run lint",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "start": "http-server --port 0 ./dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "preview": "vite preview",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@midnight-ntwrk/dapp-connector-api": "^4.0.1",
