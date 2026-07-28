@@ -15,5 +15,10 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["src/**/*.ts", "contract/**/*.ts"]
+  "include": ["src/**/*.ts", "contract/**/*.ts"],
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }
