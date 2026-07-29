@@ -72,3 +72,6 @@ managed/
 .claude
 .midnight-expert
 tome.json
+
+# Generated deployment artifacts
+.midnight/
