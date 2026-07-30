@@ -1,12 +1,14 @@
-import { type MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
-import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
+import type {
+  PrivateStateProvider,
+  MidnightProviders,
+} from "@midnight-ntwrk/midnight-js-types";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
-import { FetchZkConfigProvider } from "./fetchZkConfigProvider";
+import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 import { getConfig } from "./config";
+import { FetchZkConfigProvider } from "./fetchZkConfigProvider";
 import { createQuoteOTDPrivateState } from "./witnesses";
 
 export type QuoteOfTheDayCircuits = "post" | "publicKey";
-import type { PrivateStateProvider } from "@midnight-ntwrk/midnight-js-types";
 import type {
   ConnectedAPI,
   InitialAPI,
