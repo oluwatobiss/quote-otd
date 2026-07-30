@@ -26,7 +26,7 @@
 .card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(216, 180, 254, 0.15);
 }
 
 .card h2 {
@@ -169,6 +169,11 @@
   box-shadow: 0 0 0 1px var(--accent);
 }
 
+.input::placeholder,
+.textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
 .input:disabled,
 .textarea:disabled {
   opacity: 0.5;
@@ -204,6 +209,11 @@
 
 .btn:active:not(:disabled) {
   transform: scale(0.98);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .btn-primary {
@@ -420,13 +430,25 @@
 }
 
 blockquote {
-  font-size: 1.375rem;
+  font-size: 1.5rem;
   font-weight: 400;
   color: var(--text-h);
-  border-left: 2px solid rgba(255, 255, 255, 0.2);
-  padding-left: 1.5rem;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.preview-card {
+  opacity: 0.92;
+}
+
+.primary-card {
+  border-color: rgba(216, 180, 254, 0.25);
+  background: linear-gradient(
+    180deg,
+    var(--card-bg) 0%,
+    rgba(216, 180, 254, 0.03) 100%
+  );
 }
 
 .text-success {

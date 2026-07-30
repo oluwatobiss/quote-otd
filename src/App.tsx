@@ -224,24 +224,28 @@ function App() {
       <main className="flex-col flex-1 gap-6 w-full">
         {!contractAddress && !isCreatorView && (
           <div className="animate-fade-in-up flex-col gap-8">
-            <div className="card text-center relative overflow-hidden">
-              <div className="absolute top-4 left-4 right-4 flex justify-between items-center opacity-50 text-xs tracking-wide uppercase">
-                <span>Example Quote</span>
+            <div className="card text-center relative overflow-hidden preview-card">
+              <div className="absolute top-4 left-4 right-4 flex justify-between items-center opacity-70 text-xs tracking-wide uppercase">
+                <span className="badge badge-neutral">Preview</span>
                 <span>Today</span>
               </div>
               <div className="mt-8 mb-4">
                 <blockquote>
                   "The best way to predict the future is to create it."
                 </blockquote>
+                <p className="mt-6 text-xs opacity-50 text-center">
+                  This is a sample quote demonstrating how shared quotes are
+                  displayed.
+                </p>
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="card flex-col justify-center items-center text-center gap-4">
+              <div className="card primary-card flex-col justify-center items-center text-center gap-4">
                 <h3>Create a Quote</h3>
                 <p className="text-sm opacity-70 mb-2">
-                  Connect your wallet to deploy a privacy-preserving smart
-                  contract and publish anonymously.
+                  Connect your wallet to publish today's quote privately on
+                  Midnight.
                 </p>
                 <button
                   onClick={handleOpenWalletPicker}
@@ -254,8 +258,8 @@ function App() {
               <div className="card flex-col justify-center items-center text-center gap-4">
                 <h3>Read a Quote</h3>
                 <p className="text-sm opacity-70 mb-2">
-                  Paste a shared quote link to read the latest published
-                  inspiration.
+                  View any shared quote without connecting a wallet. Paste the
+                  link here or visit it directly.
                 </p>
                 <form
                   onSubmit={handleOpenSharedLink}
@@ -391,8 +395,8 @@ function App() {
         )}
       </main>
 
-      <footer className="mt-12 text-center opacity-50 text-xs">
-        <p>Built with Midnight.</p>
+      <footer className="mt-12 text-center opacity-70 text-xs">
+        <p>Inspiring the world anonymously. Powered by Midnight.</p>
       </footer>
 
       <WalletPicker
