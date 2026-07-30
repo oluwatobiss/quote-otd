@@ -13,6 +13,7 @@ import {
 } from "./components/TransactionStatusCard";
 import { ledger } from "../contracts/managed/quote-otd/contract/index.js";
 import { toHex } from "@midnight-ntwrk/midnight-js-utils";
+import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
 import {
   buildAppProviders,
   buildReadonlyProviders,
@@ -20,14 +21,13 @@ import {
   joinQuoteOfTheDayContract,
   MidnightProvingClient,
   type CreatorIdentity,
-  type DAppConnectorWrapper,
 } from "./midnightUtils";
 
 function App() {
   const [contractAddress, setContractAddress] = useState<string | null>(null);
   const [isInvalidContract, setIsInvalidContract] = useState(false);
 
-  const [wallet, setWallet] = useState<DAppConnectorWrapper | null>(null);
+  const [wallet, setWallet] = useState<ConnectedAPI | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -60,7 +60,7 @@ function App() {
     }
   }, []);
 
-  const loadPublicState = async (address: string) => {
+  async function loadPublicState(address: string) {
     try {
       const providers = await buildReadonlyProviders();
       const contract = await joinQuoteOfTheDayContract(
@@ -82,33 +82,35 @@ function App() {
       console.error("Failed to load public state:", err);
       setIsInvalidContract(true);
     }
-  };
+  }
 
-  const handleConnect = async () => {
+  async function handleConnect() {
     try {
       setIsConnecting(true);
       setErrorMessage(null);
 
       const connectedWallet = await connectBrowserWallet();
       setWallet(connectedWallet);
-      setWalletAddress(connectedWallet.getCoinPublicKey());
+      setWalletAddress(
+        (await connectedWallet.getUnshieldedAddress()).unshieldedAddress,
+      );
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || "Failed to connect wallet.");
     } finally {
       setIsConnecting(false);
     }
-  };
+  }
 
-  const handleDisconnect = () => {
+  function handleDisconnect() {
     setWallet(null);
     setWalletAddress(null);
     setProvingClient(null);
     setIdentity(null);
     setTxState("idle");
-  };
+  }
 
-  const handleIdentityLoaded = async (loadedIdentity: CreatorIdentity) => {
+  async function handleIdentityLoaded(loadedIdentity: CreatorIdentity) {
     setIdentity(loadedIdentity);
 
     // If we're not currently viewing a contract, or we're viewing a different one, update the URL!
@@ -140,9 +142,9 @@ function App() {
         setErrorMessage(err.message || "Failed to initialize proving client.");
       }
     }
-  };
+  }
 
-  const handlePublish = async (newQuote: string) => {
+  async function handlePublish(newQuote: string) {
     if (!provingClient || !wallet || !identity) return;
 
     try {
@@ -165,14 +167,14 @@ function App() {
       setErrorMessage(err.message || "Proof generation or transaction failed.");
       setTxState("error");
     }
-  };
+  }
 
-  const copyShareLink = () => {
+  function copyShareLink() {
     if (contractAddress) {
       const url = `${window.location.origin}${window.location.pathname}?contract=${contractAddress}`;
       navigator.clipboard.writeText(url);
     }
-  };
+  }
 
   // UI States
   const isCreatorView = !!walletAddress || !!identity;

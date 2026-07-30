@@ -6,82 +6,54 @@ import { getConfig } from "./config";
 import { createQuoteOTDPrivateState } from "./witnesses";
 
 export type QuoteOfTheDayCircuits = "post" | "publicKey";
+import type { PrivateStateProvider } from "@midnight-ntwrk/midnight-js-types";
 import type {
-  WalletProvider,
-  MidnightProvider,
-  PrivateStateProvider,
-} from "@midnight-ntwrk/midnight-js-types";
-import type { WalletConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
+  ConnectedAPI,
+  InitialAPI,
+} from "@midnight-ntwrk/dapp-connector-api";
 
-// --- DAPP CONNECTOR WRAPPER ---
-
-export class DAppConnectorWrapper implements WalletProvider, MidnightProvider {
-  constructor(private api: WalletConnectedAPI) {}
-
-  async balanceTx(tx: any, ttl?: Date): Promise<any> {
-    let hexTx: string;
-    if (tx && typeof tx.serialize === "function") {
-      hexTx = Buffer.from(tx.serialize()).toString("hex");
-    } else {
-      hexTx = Buffer.from(tx).toString("hex");
-    }
-    const balanced = await this.api.balanceUnsealedTransaction(hexTx);
-
-    // In Midnight.js v4, the pipeline might expect a Transaction object.
-    // If it fails because it's not a Transaction object, we'll need to parse it.
-    // Let's try returning an object with serialize() just in case!
-    const balancedBytes = Buffer.from(balanced.tx, "hex");
-    return {
-      serialize: () => balancedBytes,
-      ...balancedBytes,
-    };
-  }
-
-  async submitTx(tx: any): Promise<string> {
-    let hexTx: string;
-    if (tx && typeof tx.serialize === "function") {
-      hexTx = Buffer.from(tx.serialize()).toString("hex");
-    } else {
-      hexTx = Buffer.from(tx).toString("hex");
-    }
-    await this.api.submitTransaction(hexTx);
-    return "submitted";
-  }
-
-  // The interface defines getCoinPublicKey and getEncryptionPublicKey as returning values synchronously?
-  // No, in some versions of midnight-js, WalletProvider methods might be async or sync.
-  // Actually, wait! The interface says `getCoinPublicKey(): CoinPublicKey` which is sync!
-  // But DApp API `getShieldedAddresses()` is async. We must cache them on connect.
-  private cachedCoinPublicKey!: string;
-  private cachedEncPublicKey!: string;
-
-  async init() {
-    const addresses = await this.api.getShieldedAddresses();
-    this.cachedCoinPublicKey = addresses.shieldedCoinPublicKey;
-    this.cachedEncPublicKey = addresses.shieldedEncryptionPublicKey;
-  }
-
-  getCoinPublicKey(): string {
-    return this.cachedCoinPublicKey;
-  }
-
-  getEncryptionPublicKey(): string {
-    return this.cachedEncPublicKey;
-  }
+export function listWallets(): InitialAPI[] {
+  // @ts-ignore
+  const injected = window.midnight;
+  return injected ? Object.values(injected) : [];
 }
 
-export async function connectBrowserWallet(): Promise<DAppConnectorWrapper> {
-  // @ts-ignore
-  if (typeof window === "undefined" || !window.midnight?.mnLace) {
+export function selectWallet(): InitialAPI {
+  const wallets = listWallets();
+  if (wallets.length === 0) {
     throw new Error(
-      "Lace wallet extension not found. Please install Lace and try again.",
+      "No Midnight wallet found. Please install a Midnight wallet extension.",
     );
   }
-  // @ts-ignore
-  const api: WalletConnectedAPI = await window.midnight.mnLace.enable();
-  const wrapper = new DAppConnectorWrapper(api);
-  await wrapper.init();
-  return wrapper;
+  return wallets[0];
+}
+
+export async function connectBrowserWallet(): Promise<ConnectedAPI> {
+  console.log("Connect button clicked");
+
+  const wallet = selectWallet();
+
+  // Connect to the specified network (use 'undeployed' for local development)
+  const connectedApi = await wallet.connect("undeployed");
+  // const connectedApi = await wallet.connect("preview");
+  // const connectedApi = await wallet.connect("preprod");
+
+  // Optional: Get the service URI configuration
+  const serviceUriConfig = await connectedApi.getConfiguration();
+  console.log("Service URI Config:", serviceUriConfig);
+
+  // Optional: Check if the connection is established
+  const connectionStatus = await connectedApi.getConnectionStatus();
+  if (connectionStatus.status === "connected") {
+    // Retrieve the unshielded address from the wallet
+    const { unshieldedAddress } = await connectedApi.getUnshieldedAddress();
+    console.log({
+      isConnected: true,
+      walletAddress: unshieldedAddress,
+    });
+  }
+
+  return connectedApi;
 }
 
 // --- MEMORY PRIVATE STATE PROVIDER ---
@@ -120,7 +92,7 @@ export interface CreatorIdentity {
 }
 
 export async function buildAppProviders(
-  wallet: DAppConnectorWrapper,
+  wallet: ConnectedAPI,
   creatorIdentity: CreatorIdentity | null,
 ): Promise<{
   providers: MidnightProviders<any>;

@@ -26,7 +26,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
       ) : (
         <div className="flex-col gap-4">
           <p className="text-sm">
-            Connect a Midnight Wallet extension (like Lace) to pay transaction
+            Connect a Midnight Wallet extension (like 1AM) to pay transaction
             fees when publishing.
           </p>
           <div className="flex gap-2 mt-2">
