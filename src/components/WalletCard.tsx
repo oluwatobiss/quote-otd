@@ -5,29 +5,40 @@ interface WalletCardProps {
   isConnecting: boolean;
 }
 
-export const WalletCard: React.FC<WalletCardProps> = ({
+export function WalletCard({
   walletAddress,
   onConnect,
   onDisconnect,
   isConnecting,
-}) => {
+}: WalletCardProps) {
   return (
     <div className="card">
       <h2>Midnight Wallet</h2>
 
       {walletAddress ? (
         <div className="flex-col gap-2">
-          <div className="badge badge-success">Connected</div>
-          <code className="text-sm break-all">{walletAddress}</code>
-          <button onClick={onDisconnect} className="btn mt-4">
+          <div
+            className="badge badge-success"
+            style={{ alignSelf: "flex-start" }}
+          >
+            Connected
+          </div>
+          <code className="text-sm break-all opacity-70 mt-2">
+            {walletAddress}
+          </code>
+          <button
+            onClick={onDisconnect}
+            className="btn btn-ghost mt-2"
+            style={{ alignSelf: "flex-start" }}
+          >
             Disconnect
           </button>
         </div>
       ) : (
         <div className="flex-col gap-4">
-          <p className="text-sm">
-            Connect a Midnight Wallet extension (like 1AM) to pay transaction
-            fees when publishing.
+          <p className="text-sm opacity-70">
+            Connect a Midnight compatible wallet (such as Lace) to manage
+            contracts and publish zero-knowledge quotes.
           </p>
           <div className="flex gap-2 mt-2">
             <button
@@ -42,4 +53,4 @@ export const WalletCard: React.FC<WalletCardProps> = ({
       )}
     </div>
   );
-};
+}

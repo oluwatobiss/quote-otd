@@ -1,27 +1,35 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap");
 
 :root {
-  --text: #9ca3af;
-  --text-h: #f3f4f6;
-  --bg: #0f0f13;
-  --card-bg: rgba(26, 27, 35, 0.7);
-  --border: #2e303a;
-  --input-bg: rgba(15, 15, 19, 0.8);
-  --input-border: #3f4250;
-  --code-bg: #1f2028;
+  /* Colors */
+  --text: #a1a1aa;
+  --text-h: #f4f4f5;
+  --bg: #09090b;
+  --card-bg: rgba(24, 24, 27, 0.4);
+  --border: rgba(255, 255, 255, 0.08);
+  --input-bg: rgba(39, 39, 42, 0.5);
+  --input-border: rgba(255, 255, 255, 0.1);
+  --code-bg: rgba(255, 255, 255, 0.05);
 
-  --accent: #aa3bff;
-  --accent-hover: #b85eff;
-  --accent-bg: rgba(170, 59, 255, 0.15);
-  --accent-border: rgba(170, 59, 255, 0.4);
+  --accent: #d8b4fe;
+  --accent-hover: #e9d5ff;
+  --accent-bg: rgba(216, 180, 254, 0.1);
+  --accent-border: rgba(216, 180, 254, 0.2);
 
   --success: #10b981;
   --error: #ef4444;
   --error-bg: rgba(239, 68, 68, 0.1);
 
-  --social-bg: rgba(47, 48, 58, 0.5);
-  --shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --social-bg: rgba(255, 255, 255, 0.03);
+
+  /* Layout & FX */
+  --shadow-sm: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg:
+    0 16px 32px -8px rgba(0, 0, 0, 0.6), 0 0 24px -4px rgba(216, 180, 254, 0.05);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
 
   --sans: "Inter", system-ui, -apple-system, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -35,19 +43,19 @@ body {
   background: var(--bg);
   background-image:
     radial-gradient(
-      circle at 15% 50%,
-      rgba(170, 59, 255, 0.08),
-      transparent 25%
+      circle at 15% 15%,
+      rgba(216, 180, 254, 0.03),
+      transparent 30%
     ),
     radial-gradient(
-      circle at 85% 30%,
-      rgba(170, 59, 255, 0.05),
-      transparent 25%
+      circle at 85% 85%,
+      rgba(216, 180, 254, 0.02),
+      transparent 30%
     );
   color: var(--text);
   font-family: var(--sans);
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -57,22 +65,22 @@ h2,
 h3,
 h4 {
   color: var(--text-h);
-  font-weight: 600;
+  font-weight: 500;
   margin: 0;
   line-height: 1.2;
 }
 
 h1 {
-  font-size: 2.5rem;
-  letter-spacing: -0.02em;
+  font-size: 2.25rem;
+  letter-spacing: -0.03em;
 }
 
 code {
   font-family: var(--mono);
   background: var(--code-bg);
   padding: 0.2em 0.4em;
-  border-radius: 0.25rem;
-  font-size: 0.875em;
+  border-radius: var(--radius-sm);
+  font-size: 0.85em;
   color: var(--text-h);
 }
 
@@ -82,16 +90,62 @@ code {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--input-border);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Skeleton Loading Animation */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-loader {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2s infinite linear;
+}
+
+/* Utility Animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

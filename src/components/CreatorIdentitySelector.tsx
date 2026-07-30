@@ -8,12 +8,15 @@ interface CreatorIdentitySelectorProps {
   expectedOwnerPublicKey: string | null;
 }
 
-export const CreatorIdentitySelector: React.FC<
-  CreatorIdentitySelectorProps
-> = ({ onIdentityLoaded, onClear, identity, expectedOwnerPublicKey }) => {
+export function CreatorIdentitySelector({
+  onIdentityLoaded,
+  onClear,
+  identity,
+  expectedOwnerPublicKey,
+}: CreatorIdentitySelectorProps) {
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setError(null);
     const file = e.target.files?.[0];
     if (!file) return;
@@ -51,7 +54,7 @@ export const CreatorIdentitySelector: React.FC<
       e.target.value = "";
     };
     reader.readAsText(file);
-  };
+  }
 
   return (
     <div className="card">
@@ -59,8 +62,13 @@ export const CreatorIdentitySelector: React.FC<
 
       {identity ? (
         <div className="flex-col gap-4">
-          <div className="badge badge-success-outline">Identity Loaded</div>
-          <p className="text-sm">
+          <div
+            className="badge badge-success-outline"
+            style={{ alignSelf: "flex-start" }}
+          >
+            Identity Loaded
+          </div>
+          <p className="text-sm opacity-70">
             <strong>
               Your Creator Identity stays entirely on this device.
             </strong>{" "}
@@ -68,14 +76,18 @@ export const CreatorIdentitySelector: React.FC<
             of this contract. Only the proof and public transaction data are
             submitted to the Midnight network.
           </p>
-          <button onClick={onClear} className="btn mt-2">
+          <button
+            onClick={onClear}
+            className="btn btn-ghost mt-2"
+            style={{ alignSelf: "flex-start" }}
+          >
             Clear Identity
           </button>
         </div>
       ) : (
         <div className="flex-col gap-4">
-          <p className="text-sm">
-            Select your <code>.quoteotd</code> file to prove ownership.
+          <p className="text-sm opacity-70">
+            Select your <code>.quoteotd</code> file to securely prove ownership.
           </p>
 
           <input
@@ -90,4 +102,4 @@ export const CreatorIdentitySelector: React.FC<
       )}
     </div>
   );
-};
+}

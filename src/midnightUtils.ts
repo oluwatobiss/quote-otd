@@ -28,10 +28,10 @@ export function selectWallet(): InitialAPI {
   return wallets[0];
 }
 
-export async function connectBrowserWallet(): Promise<ConnectedAPI> {
+export async function connectBrowserWallet(
+  wallet: InitialAPI,
+): Promise<ConnectedAPI> {
   console.log("Connect button clicked");
-
-  const wallet = selectWallet();
 
   // Connect to the specified network (use 'undeployed' for local development)
   const connectedApi = await wallet.connect("undeployed");

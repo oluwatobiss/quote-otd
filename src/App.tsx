@@ -11,25 +11,36 @@ import {
   TransactionStatusCard,
   type TxState,
 } from "./components/TransactionStatusCard";
+import { WalletPicker } from "./components/WalletPicker";
+import { SkeletonText } from "./components/Skeleton";
 import { ledger } from "../contracts/managed/quote-otd/contract/index.js";
 import { toHex } from "@midnight-ntwrk/midnight-js-utils";
-import type { ConnectedAPI } from "@midnight-ntwrk/dapp-connector-api";
+import type {
+  ConnectedAPI,
+  InitialAPI,
+} from "@midnight-ntwrk/dapp-connector-api";
 import {
   buildAppProviders,
   buildReadonlyProviders,
   connectBrowserWallet,
   joinQuoteOfTheDayContract,
   MidnightProvingClient,
+  listWallets,
   type CreatorIdentity,
 } from "./midnightUtils";
 
 function App() {
   const [contractAddress, setContractAddress] = useState<string | null>(null);
   const [isInvalidContract, setIsInvalidContract] = useState(false);
+  const [isLoadingPublicState, setIsLoadingPublicState] = useState(false);
 
   const [wallet, setWallet] = useState<ConnectedAPI | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // Wallet Picker State
+  const [isWalletPickerOpen, setIsWalletPickerOpen] = useState(false);
+  const [availableWallets, setAvailableWallets] = useState<InitialAPI[]>([]);
 
   const [identity, setIdentity] = useState<CreatorIdentity | null>(null);
 
@@ -40,9 +51,10 @@ function App() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // References to our Midnight instances
   const [provingClient, setProvingClient] =
     useState<MidnightProvingClient | null>(null);
+
+  const [sharedLinkInput, setSharedLinkInput] = useState("");
 
   // Parse URL for contract address on mount
   useEffect(() => {
@@ -51,7 +63,6 @@ function App() {
 
     if (contractParam) {
       if (contractParam.length > 10) {
-        // basic sanity check
         setContractAddress(contractParam);
         loadPublicState(contractParam);
       } else {
@@ -62,6 +73,8 @@ function App() {
 
   async function loadPublicState(address: string) {
     try {
+      setIsLoadingPublicState(true);
+      setIsInvalidContract(false);
       const providers = await buildReadonlyProviders();
       const contract = await joinQuoteOfTheDayContract(
         providers,
@@ -77,26 +90,37 @@ function App() {
           const state = ledger(contractState.data);
           setQuote(state.quoteOfTheDay);
           setOwnerPublicKey(toHex(state.owner));
+          setIsLoadingPublicState(false);
         });
     } catch (err) {
       console.error("Failed to load public state:", err);
       setIsInvalidContract(true);
+      setIsLoadingPublicState(false);
     }
   }
 
-  async function handleConnect() {
+  function handleOpenWalletPicker() {
+    const wallets = listWallets();
+    setAvailableWallets(wallets);
+    setIsWalletPickerOpen(true);
+  }
+
+  async function handleConnect(selectedWallet: InitialAPI) {
     try {
+      setIsWalletPickerOpen(false);
       setIsConnecting(true);
       setErrorMessage(null);
 
-      const connectedWallet = await connectBrowserWallet();
+      const connectedWallet = await connectBrowserWallet(selectedWallet);
       setWallet(connectedWallet);
       setWalletAddress(
         (await connectedWallet.getUnshieldedAddress()).unshieldedAddress,
       );
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(err.message || "Failed to connect wallet.");
+      setErrorMessage(
+        "Couldn't connect to your wallet. Please unlock it and try again.",
+      );
     } finally {
       setIsConnecting(false);
     }
@@ -113,20 +137,14 @@ function App() {
   async function handleIdentityLoaded(loadedIdentity: CreatorIdentity) {
     setIdentity(loadedIdentity);
 
-    // If we're not currently viewing a contract, or we're viewing a different one, update the URL!
     if (contractAddress !== loadedIdentity.contractAddress) {
       setContractAddress(loadedIdentity.contractAddress);
-
-      // Update URL without reload
       const newUrl = `${window.location.pathname}?contract=${loadedIdentity.contractAddress}`;
       window.history.pushState({ path: newUrl }, "", newUrl);
-
-      // Load the contract state
       await loadPublicState(loadedIdentity.contractAddress);
     }
 
     if (wallet) {
-      // If wallet is connected, initialize proving client
       try {
         const { providers, stateProvider } = await buildAppProviders(
           wallet,
@@ -139,7 +157,7 @@ function App() {
         );
         setProvingClient(new MidnightProvingClient(contract, stateProvider));
       } catch (err: any) {
-        setErrorMessage(err.message || "Failed to initialize proving client.");
+        setErrorMessage("Failed to initialize proving client.");
       }
     }
   }
@@ -152,19 +170,15 @@ function App() {
       setTxHash(null);
       setErrorMessage(null);
 
-      // This performs the zero-knowledge proof locally and clears the secret from memory instantly
       const hash = await provingClient.provePost(newQuote);
 
       setTxState("submitting");
-
       setTxHash(hash);
       setTxState("success");
-
-      // Instantly purge the identity from React state
       setIdentity(null);
     } catch (err: any) {
       console.error("Publish failed:", err);
-      setErrorMessage(err.message || "Proof generation or transaction failed.");
+      setErrorMessage("Proof generation or transaction failed.");
       setTxState("error");
     }
   }
@@ -176,118 +190,217 @@ function App() {
     }
   }
 
-  // UI States
+  function handleOpenSharedLink(e: React.SubmitEvent) {
+    e.preventDefault();
+    if (!sharedLinkInput) return;
+
+    let targetContract = sharedLinkInput.trim();
+
+    // Check if it's a full URL
+    try {
+      const url = new URL(targetContract);
+      const param = url.searchParams.get("contract");
+      if (param) {
+        targetContract = param;
+      }
+    } catch (e) {
+      // Not a valid URL, treat as direct contract ID if they pasted that instead
+    }
+
+    if (targetContract) {
+      setContractAddress(targetContract);
+      const newUrl = `${window.location.pathname}?contract=${targetContract}`;
+      window.history.pushState({ path: newUrl }, "", newUrl);
+      loadPublicState(targetContract);
+    }
+  }
+
   const isCreatorView = !!walletAddress || !!identity;
 
   return (
-    <div className="container mx-auto max-w-3xl p-4 md:p-8 flex-col gap-6">
+    <div className="container mx-auto max-w-3xl flex-col min-h-screen">
       <Header />
 
-      {!contractAddress && !isCreatorView && (
-        <div className="card text-center p-8 mt-8 border border-dashed border-border opacity-70">
-          <h2 className="mb-4">No Contract Specified</h2>
-          <p>
-            Please provide a valid <code>?contract=</code> URL parameter to view
-            a quote.
-          </p>
-          <div className="divider my-6 text-sm">OR</div>
-          <p className="mb-4 text-sm">
-            If you are a creator, connect your wallet to manage your contract.
-          </p>
-          <button onClick={handleConnect} className="btn btn-primary">
-            Connect Wallet
-          </button>
-        </div>
-      )}
+      <main className="flex-col flex-1 gap-6 w-full">
+        {!contractAddress && !isCreatorView && (
+          <div className="animate-fade-in-up flex-col gap-8">
+            <div className="card text-center relative overflow-hidden">
+              <div className="absolute top-4 left-4 right-4 flex justify-between items-center opacity-50 text-xs tracking-wide uppercase">
+                <span>Example Quote</span>
+                <span>Today</span>
+              </div>
+              <div className="mt-8 mb-4">
+                <blockquote>
+                  "The best way to predict the future is to create it."
+                </blockquote>
+              </div>
+            </div>
 
-      {isInvalidContract && (
-        <div className="card error-state">
-          <h2>Error</h2>
-          <p>
-            The specified contract could not be loaded. Please verify the URL.
-          </p>
-        </div>
-      )}
-
-      {/* Reader View */}
-      {contractAddress && !isCreatorView && (
-        <>
-          <div className="flex gap-4 justify-between items-center mb-2">
-            <span className="text-xs opacity-50 uppercase tracking-wide">
-              Viewing Contract
-            </span>
-            <button onClick={handleConnect} className="btn btn-sm">
-              I am the Creator
-            </button>
-          </div>
-
-          <OwnerCard ownerPublicKey={ownerPublicKey} isOwner={false} />
-          <CurrentQuoteCard quote={quote} />
-        </>
-      )}
-
-      {/* Creator View */}
-      {isCreatorView && (
-        <>
-          <div className="grid gap-6 md:grid-cols-2">
-            <WalletCard
-              walletAddress={walletAddress}
-              onConnect={handleConnect}
-              onDisconnect={handleDisconnect}
-              isConnecting={isConnecting}
-            />
-
-            {walletAddress && (
-              <CreatorIdentitySelector
-                identity={identity}
-                onIdentityLoaded={handleIdentityLoaded}
-                onClear={() => setIdentity(null)}
-                expectedOwnerPublicKey={ownerPublicKey}
-              />
-            )}
-          </div>
-
-          {contractAddress && (
-            <div className="flex-col gap-4 mt-2">
-              <div className="flex gap-4 justify-between items-center">
-                <span className="text-xs opacity-50 uppercase tracking-wide">
-                  Contract Data
-                </span>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="card flex-col justify-center items-center text-center gap-4">
+                <h3>Create a Quote</h3>
+                <p className="text-sm opacity-70 mb-2">
+                  Connect your wallet to deploy a privacy-preserving smart
+                  contract and publish anonymously.
+                </p>
                 <button
-                  onClick={copyShareLink}
-                  className="btn btn-sm flex gap-2"
+                  onClick={handleOpenWalletPicker}
+                  className="btn btn-primary w-full"
                 >
-                  <span>🔗</span> Copy Share Link
+                  Connect Wallet
                 </button>
               </div>
 
-              <CurrentQuoteCard quote={quote} />
-
-              <PublishQuoteCard
-                onPublish={handlePublish}
-                isDisabled={
-                  !provingClient ||
-                  txState === "proving" ||
-                  txState === "submitting"
-                }
-                disabledReason={
-                  !provingClient
-                    ? "Connect Wallet and select Creator Identity to publish."
-                    : txState === "proving" || txState === "submitting"
-                      ? "Transaction in progress..."
-                      : null
-                }
-              />
+              <div className="card flex-col justify-center items-center text-center gap-4">
+                <h3>Read a Quote</h3>
+                <p className="text-sm opacity-70 mb-2">
+                  Paste a shared quote link to read the latest published
+                  inspiration.
+                </p>
+                <form
+                  onSubmit={handleOpenSharedLink}
+                  className="flex gap-2 w-full"
+                >
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Paste link here..."
+                    value={sharedLinkInput}
+                    onChange={(e) => setSharedLinkInput(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className="btn"
+                    disabled={!sharedLinkInput}
+                  >
+                    Open
+                  </button>
+                </form>
+              </div>
             </div>
-          )}
+          </div>
+        )}
 
-          <TransactionStatusCard
-            txState={txState}
-            txHash={txHash}
-            errorMessage={errorMessage}
-          />
-        </>
-      )}
+        {isInvalidContract && (
+          <div className="card border-error bg-error-bg animate-fade-in-up">
+            <h2 className="text-error">Couldn't Load Quote</h2>
+            <p>
+              The shared link appears to be invalid or the contract could not be
+              loaded. Please verify the URL.
+            </p>
+          </div>
+        )}
+
+        {/* Reader View */}
+        {contractAddress && !isCreatorView && !isInvalidContract && (
+          <div className="animate-fade-in-up flex-col gap-6">
+            <div className="flex justify-between items-center">
+              <span className="text-xs opacity-50 uppercase tracking-wide">
+                Viewing Quote
+              </span>
+              <button
+                onClick={handleOpenWalletPicker}
+                className="btn btn-sm btn-ghost"
+              >
+                I am the Creator
+              </button>
+            </div>
+
+            {isLoadingPublicState ? (
+              <div className="flex-col gap-6">
+                <div className="card">
+                  <SkeletonText lines={1} width="40%" />
+                  <div className="mt-4">
+                    <SkeletonText lines={1} />
+                  </div>
+                </div>
+                <div className="card">
+                  <SkeletonText lines={2} />
+                </div>
+              </div>
+            ) : (
+              <>
+                <OwnerCard ownerPublicKey={ownerPublicKey} isOwner={false} />
+                <CurrentQuoteCard quote={quote} />
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Creator View */}
+        {isCreatorView && (
+          <div className="animate-fade-in-up flex-col gap-6">
+            <div className="grid md:grid-cols-2">
+              <WalletCard
+                walletAddress={walletAddress}
+                onConnect={handleOpenWalletPicker}
+                onDisconnect={handleDisconnect}
+                isConnecting={isConnecting}
+              />
+
+              {walletAddress && (
+                <CreatorIdentitySelector
+                  identity={identity}
+                  onIdentityLoaded={handleIdentityLoaded}
+                  onClear={() => setIdentity(null)}
+                  expectedOwnerPublicKey={ownerPublicKey}
+                />
+              )}
+            </div>
+
+            {contractAddress && (
+              <div className="flex-col gap-4 mt-2">
+                <div className="flex gap-4 justify-between items-center">
+                  <span className="text-xs opacity-50 uppercase tracking-wide">
+                    Contract Data
+                  </span>
+                  <button
+                    onClick={copyShareLink}
+                    className="btn btn-sm flex gap-2"
+                  >
+                    <span>🔗</span> Copy Share Link
+                  </button>
+                </div>
+
+                <CurrentQuoteCard quote={quote} />
+
+                <PublishQuoteCard
+                  onPublish={handlePublish}
+                  isDisabled={
+                    !provingClient ||
+                    txState === "proving" ||
+                    txState === "submitting"
+                  }
+                  disabledReason={
+                    !provingClient
+                      ? "Connect Wallet and select Creator Identity to publish."
+                      : txState === "proving" || txState === "submitting"
+                        ? "Transaction in progress..."
+                        : null
+                  }
+                />
+              </div>
+            )}
+
+            <TransactionStatusCard
+              txState={txState}
+              txHash={txHash}
+              errorMessage={errorMessage}
+            />
+          </div>
+        )}
+      </main>
+
+      <footer className="mt-12 text-center opacity-50 text-xs">
+        <p>Built with Midnight.</p>
+      </footer>
+
+      <WalletPicker
+        isOpen={isWalletPickerOpen}
+        wallets={availableWallets}
+        onSelect={handleConnect}
+        onClose={() => setIsWalletPickerOpen(false)}
+      />
     </div>
   );
 }
