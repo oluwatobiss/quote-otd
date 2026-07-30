@@ -1,39 +1,36 @@
+import * as fs from "fs";
+import * as path from "path";
+import pino from "pino";
+import { getConfig } from "../src/config.js";
 import {
   deployContract,
   type DeployedContract,
 } from "@midnight-ntwrk/midnight-js-contracts";
-
 import {
   PRIVATE_STATE_ID,
   ensureDeploymentInfo,
   ownerSecret,
   saveDeploymentInfo,
 } from "./deployment.js";
-
-import { createQuoteOTDPrivateState } from "../src/witnesses.js";
-
-import {
-  type EnvironmentConfiguration,
-  waitForFunds,
-} from "@midnight-ntwrk/testkit-js";
-import pino from "pino";
-import { getConfig } from "../src/config.js";
-import {
-  MidnightWalletProvider,
-  syncWallet,
-  type WalletSecret,
-} from "../src/wallet.js";
-
-import {
-  buildProviders,
-  type QuoteOfTheDayProviders,
-} from "../src/providers.js";
-
 import {
   CompiledQuoteOfTheDayContract,
   Contract,
   zkConfigPath,
 } from "../contracts/index.js";
+import {
+  buildProviders,
+  type QuoteOfTheDayProviders,
+} from "../src/providers.js";
+import {
+  type EnvironmentConfiguration,
+  waitForFunds,
+} from "@midnight-ntwrk/testkit-js";
+import {
+  MidnightWalletProvider,
+  syncWallet,
+  type WalletSecret,
+} from "../src/wallet.js";
+import { createQuoteOTDPrivateState } from "../src/witnesses.js";
 
 async function main() {
   let wallet: MidnightWalletProvider;
@@ -134,8 +131,30 @@ async function main() {
   deploymentInfo.contractAddress = deployed.deployTxData.public.contractAddress;
   saveDeploymentInfo(deploymentInfo);
 
+  const ownerPublicKeyHex = "unknown";
+  const secretKeyArray = Array.from(ownerSecret(deploymentInfo));
+
+  const creatorIdentity = {
+    version: 1,
+    contractAddress: deploymentInfo.contractAddress,
+    ownerPublicKey: ownerPublicKeyHex,
+    secretKey: secretKeyArray,
+    createdAt: new Date().toISOString(),
+  };
+
+  const identityPath = path.resolve(process.cwd(), "creator-identity.quoteotd");
+  fs.writeFileSync(
+    identityPath,
+    JSON.stringify(creatorIdentity, null, 2),
+    "utf-8",
+  );
+
   logger.info(`Contract Address: ${deploymentInfo.contractAddress}`);
   logger.info(`Saved to: .midnight/deployment.json`);
+  logger.info(`Generated Creator Identity: creator-identity.quoteotd`);
+  logger.info(
+    `🚨 IMPORTANT: Store 'creator-identity.quoteotd' securely! It represents ownership of your contract and is required for publishing new quotes.`,
+  );
   logger.info(
     "─── Deployment Complete! ───────────────────────────────────────",
   );
