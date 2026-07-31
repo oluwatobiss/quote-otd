@@ -71,6 +71,30 @@ function App() {
     }
   }, []);
 
+  // Initialize proving client when both wallet and identity are available
+  useEffect(() => {
+    if (wallet && identity && !provingClient) {
+      const init = async () => {
+        try {
+          const { providers, stateProvider } = await buildAppProviders(
+            wallet,
+            identity,
+          );
+          const contract = await joinQuoteOfTheDayContract(
+            providers,
+            identity.contractAddress,
+            identity,
+          );
+          setProvingClient(new MidnightProvingClient(contract, stateProvider));
+        } catch (err: any) {
+          console.error("Failed to initialize proving client:", err);
+          setErrorMessage("Failed to initialize proving client.");
+        }
+      };
+      init();
+    }
+  }, [wallet, identity, provingClient]);
+
   async function loadPublicState(address: string) {
     try {
       setIsLoadingPublicState(true);
@@ -142,23 +166,6 @@ function App() {
       const newUrl = `${window.location.pathname}?contract=${loadedIdentity.contractAddress}`;
       window.history.pushState({ path: newUrl }, "", newUrl);
       await loadPublicState(loadedIdentity.contractAddress);
-    }
-
-    if (wallet) {
-      try {
-        const { providers, stateProvider } = await buildAppProviders(
-          wallet,
-          loadedIdentity,
-        );
-        const contract = await joinQuoteOfTheDayContract(
-          providers,
-          loadedIdentity.contractAddress,
-          loadedIdentity,
-        );
-        setProvingClient(new MidnightProvingClient(contract, stateProvider));
-      } catch (err: any) {
-        setErrorMessage("Failed to initialize proving client.");
-      }
     }
   }
 

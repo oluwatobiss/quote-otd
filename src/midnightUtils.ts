@@ -17,6 +17,7 @@ import type {
   InitialAPI,
 } from "@midnight-ntwrk/dapp-connector-api";
 import { CompiledQuoteOfTheDayContract } from "../contracts/index.js";
+import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 
 export type QuoteOfTheDayCircuits = "post" | "publicKey";
 
@@ -55,6 +56,15 @@ export async function connectBrowserWallet(
   if (connectionStatus.status === "connected") {
     // Retrieve the unshielded address from the wallet
     const { unshieldedAddress } = await connectedApi.getUnshieldedAddress();
+    const { shieldedCoinPublicKey, shieldedEncryptionPublicKey } =
+      await connectedApi.getShieldedAddresses();
+
+    // The Midnight JS SDK expects synchronous getCoinPublicKey methods on the WalletProvider.
+    // The DApp connector provides them asynchronously, so we polyfill them here.
+    (connectedApi as any).getCoinPublicKey = () => shieldedCoinPublicKey;
+    (connectedApi as any).getEncryptionPublicKey = () =>
+      shieldedEncryptionPublicKey;
+
     console.log({
       isConnected: true,
       walletAddress: unshieldedAddress,
@@ -71,21 +81,41 @@ export class MemoryPrivateStateProvider implements PrivateStateProvider<
   any
 > {
   private state: any;
+  private signingKey: any = null;
 
   constructor(initialState: any) {
     this.state = initialState;
   }
 
-  async get(): Promise<any> {
+  async get(id: string): Promise<any> {
     return this.state;
   }
 
-  async set(state: any): Promise<void> {
+  async set(id: string, state: any): Promise<void> {
     this.state = state;
+  }
+
+  async remove(id: string): Promise<void> {
+    this.state = null;
+  }
+
+  async setContractAddress(address: string): Promise<void> {}
+
+  async getSigningKey(address: any): Promise<any> {
+    return this.signingKey;
+  }
+
+  async setSigningKey(address: any, key: any): Promise<void> {
+    this.signingKey = key;
+  }
+
+  async removeSigningKey(address: any): Promise<void> {
+    this.signingKey = null;
   }
 
   async clear(): Promise<void> {
     this.state = null;
+    this.signingKey = null;
   }
 }
 
@@ -138,6 +168,7 @@ export async function buildAppProviders(
 
 export function buildReadonlyProviders(): MidnightProviders {
   const config = getConfig();
+  setNetworkId(config.networkId);
   const inMemoryBBoardPrivateStateProvider = inMemoryPrivateStateProvider<
     string,
     QuoteOTDPrivateState
@@ -179,7 +210,7 @@ export class MidnightProvingClient {
   ) {}
 
   async provePost(newQuote: string): Promise<string> {
-    const tx = await this.contract.circuits.post(newQuote);
+    const tx = await this.contract.callTx.post(newQuote);
     // After provePost succeeds, the private state must be wiped.
     await this.stateProvider.clear();
     return tx.txHash || "unknown_hash";
