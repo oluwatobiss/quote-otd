@@ -24,11 +24,10 @@ import {
   CompiledQuoteOfTheDayContract,
   Contract,
   ledger,
-  zkConfigPath,
 } from "../../contracts/index.js";
 
 import { QuoteOTDSimulator } from "./quote-otd-simulator.js";
-import { randomBytes } from "./utils.js";
+import { randomBytes } from "../../lib/crypto.js";
 import { createQuoteOTDPrivateState } from "../witnesses.js";
 
 // Required for GraphQL subscriptions in Node.js
@@ -44,9 +43,9 @@ process.on("uncaughtException", (err) => {
   console.error("UNCAUGHT EXCEPTION:", err);
 });
 
-const ALICE_LOCAL_SEED =
+const OWNER_LOCAL_SEED =
   "0000000000000000000000000000000000000000000000000000000000000001";
-const PRIVATE_STATE_ID = "AlicePrivateQuoteOTDState";
+const PRIVATE_STATE_ID = "OwnerPrivateQuoteOTDState";
 
 const logger = pino({
   level: process.env["LOG_LEVEL"] ?? "info",
@@ -56,7 +55,7 @@ const logger = pino({
 const network = process.env["MIDNIGHT_NETWORK"] ?? "local";
 
 function resolveSecret(net: string): WalletSecret {
-  if (net === "local") return { kind: "seed", value: ALICE_LOCAL_SEED };
+  if (net === "local") return { kind: "seed", value: OWNER_LOCAL_SEED };
 
   const upper = net.toUpperCase();
   const mnemonicEnv = `MIDNIGHT_${upper}_MNEMONIC`;
@@ -135,7 +134,7 @@ describe(`Quote of The Day Contract (${network})`, () => {
       logger.info(`Wallet NIGHT balance on '${network}': ${nightBalance}`);
     }
 
-    providers = buildProviders(wallet, zkConfigPath, config);
+    providers = buildProviders(wallet, "contracts/managed/quote-otd", config);
     logger.info(`Providers initialized on '${network}'. Ready to test!`);
   });
 

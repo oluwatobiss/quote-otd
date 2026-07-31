@@ -146,8 +146,8 @@ A privacy-preserving certification verifier for Midnight Academy graduates.
 
 ### Compiled Contract Output
 
-![Compiled Output Screenshot](./assets/compiled-output-screenshot.png)
+![Compiled Output Screenshot](./public/compiled-output-screenshot.png)
 
 ### Deployment and Contract Address
 
-![Deployed Contract Screenshot](./assets/deployed-contract-screenshot.png)
+![Deployed Contract Screenshot](./public/deployed-contract-screenshot.png)
