@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../../",
+  "sources": ["contracts/quote-otd.compact", "compiler/standard-library.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EAaA;;;;;;;;;;;;;MAIA,AAAA,IAGC;;;;;cAHmB,UAA0B;;;;;;;;;;;yCAA1B,UAA0B;;;;;;;iEAA1B,UAA0B;;;OAG7C;MAED,AAAA,SAEC;;OAAA;;;;GATA;EAFD;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;IARA;;;;;;;;;yEAAsC;IACtC;;;;;;;;;yEAA8C;UAQ1C,KAAK;;IAAL;;;;;;;2HAAA,KAAK;;yEAAA;;;;;;;GACR;ECfD,AAAA,kBAAA;oEAAA;;;EDSA,AAAA,iBAAoC;;0DAApC,cAAoC;;;;;;;;;;;;;;GAAA;EAQpC,AAAA,OAGC,4BAHmB,UAA0B;kEACnC;;;;;;;;;;;uIAAK;;;;IACZ;;;;;;;2HAAyB,UAAQ;;yEAApB;;GAChB;EAED,AAAA,YAEC,CAFwB,IAAa;;mCACoC,IAAE;GAC3E;;;;;;;;;;;;;;;;;;;;IAnBD;qCAAA;;;;;;;;;;;0GAAsC;KAAA;IACtC;qCAAA;;;;;;;;;;;0GAA8C;KAAA;;;;;;;;EAgB9C,AAAA,SAEC;;;;UAFwB,IAAa;;;;;;;;uCAAb,IAAa;GAErC;;;;"
+}
