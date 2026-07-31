@@ -6,6 +6,8 @@ A Midnight smart contract that lets the owner post a quote for the day which any
 
 ## Live Demo
 
+https://quote-otd.netlify.app
+
 ## Contract Address
 
 | Network | Address                                                          |
