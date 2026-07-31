@@ -4,6 +4,8 @@
 
 A Midnight smart contract that lets the owner post a quote for the day which anyone can view.
 
+## Live Demo
+
 ## Contract Address
 
 | Network | Address                                                          |
@@ -151,3 +153,7 @@ A privacy-preserving certification verifier for Midnight Academy graduates.
 ### Deployment and Contract Address
 
 ![Deployed Contract Screenshot](./public/deployed-contract-screenshot.png)
+
+## Demo Video
+
+Pending. 1AM Preview Network unstable while publishing a post. (`Failed Proof Server response: url="https://api-preview.1am.xyz/check", code="500"`)
