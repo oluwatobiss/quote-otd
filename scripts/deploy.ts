@@ -12,11 +12,7 @@ import {
   ownerSecret,
   saveDeploymentInfo,
 } from "./deployment.js";
-import {
-  CompiledQuoteOfTheDayContract,
-  Contract,
-  zkConfigPath,
-} from "../contracts/index.js";
+import { CompiledQuoteOfTheDayContract, Contract } from "../contracts/index.js";
 import {
   buildProviders,
   type QuoteOfTheDayProviders,
@@ -113,7 +109,7 @@ async function main() {
     logger.info(`Wallet NIGHT balance on '${network}': ${nightBalance}`);
   }
 
-  providers = buildProviders(wallet, zkConfigPath, config);
+  providers = buildProviders(wallet, "contracts/managed/quote-otd", config);
 
   const deployed: DeployedContract<Contract> = await deployContract<Contract>(
     providers,

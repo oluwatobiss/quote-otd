@@ -75,7 +75,7 @@ function App() {
     try {
       setIsLoadingPublicState(true);
       setIsInvalidContract(false);
-      const providers = await buildReadonlyProviders();
+      const providers = buildReadonlyProviders();
       const contract = await joinQuoteOfTheDayContract(
         providers,
         address,

@@ -6,13 +6,19 @@ import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 import { getConfig } from "./config";
 import { FetchZkConfigProvider } from "./fetchZkConfigProvider";
-import { createQuoteOTDPrivateState } from "./witnesses";
-
-export type QuoteOfTheDayCircuits = "post" | "publicKey";
+import {
+  createQuoteOTDPrivateState,
+  type QuoteOTDPrivateState,
+} from "./witnesses";
+import { inMemoryPrivateStateProvider } from "./inMemoryPrivateStateProvider.js";
+import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import type {
   ConnectedAPI,
   InitialAPI,
 } from "@midnight-ntwrk/dapp-connector-api";
+import { CompiledQuoteOfTheDayContract } from "../contracts/index.js";
+
+export type QuoteOfTheDayCircuits = "post" | "publicKey";
 
 export function listWallets(): InitialAPI[] {
   // @ts-ignore
@@ -36,8 +42,8 @@ export async function connectBrowserWallet(
   console.log("Connect button clicked");
 
   // Connect to the specified network (use 'undeployed' for local development)
-  const connectedApi = await wallet.connect("undeployed");
-  // const connectedApi = await wallet.connect("preview");
+  // const connectedApi = await wallet.connect("undeployed");
+  const connectedApi = await wallet.connect("preview");
   // const connectedApi = await wallet.connect("preprod");
 
   // Optional: Get the service URI configuration
@@ -100,8 +106,7 @@ export async function buildAppProviders(
   providers: MidnightProviders<any>;
   stateProvider: MemoryPrivateStateProvider;
 }> {
-  const config = getConfig();
-
+  const walletConfig = await wallet.getConfiguration();
   const zkConfigProvider = new FetchZkConfigProvider<QuoteOfTheDayCircuits>();
 
   // Ephemeral memory state!
@@ -116,12 +121,12 @@ export async function buildAppProviders(
     providers: {
       privateStateProvider: privateStateProvider as any,
       publicDataProvider: indexerPublicDataProvider(
-        config.indexer,
-        config.indexerWS,
+        walletConfig.indexerUri,
+        walletConfig.indexerWsUri,
       ),
       zkConfigProvider: zkConfigProvider as any,
       proofProvider: httpClientProofProvider(
-        config.proofServer,
+        walletConfig.proverServerUri || "http://127.0.0.1:6300",
         zkConfigProvider as any,
       ),
       walletProvider: wallet as any,
@@ -131,14 +136,12 @@ export async function buildAppProviders(
   };
 }
 
-export async function buildReadonlyProviders(): Promise<
-  MidnightProviders<any>
-> {
+export function buildReadonlyProviders(): MidnightProviders {
   const config = getConfig();
-  const privateStateProvider = new MemoryPrivateStateProvider(
-    createQuoteOTDPrivateState(new Uint8Array(32)),
-  );
-
+  const inMemoryBBoardPrivateStateProvider = inMemoryPrivateStateProvider<
+    string,
+    QuoteOTDPrivateState
+  >();
   // Dummy wallet for read-only
   const dummyWallet: any = {
     balanceTx: async () => {
@@ -154,7 +157,7 @@ export async function buildReadonlyProviders(): Promise<
   };
 
   return {
-    privateStateProvider: privateStateProvider as any,
+    privateStateProvider: inMemoryBBoardPrivateStateProvider,
     publicDataProvider: indexerPublicDataProvider(
       config.indexer,
       config.indexerWS,
@@ -183,19 +186,6 @@ export class MidnightProvingClient {
   }
 }
 
-import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
-import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
-import { Contract } from "../contracts/managed/quote-otd/contract/index.js";
-import { witnesses } from "./witnesses.js";
-
-export const browserCompiledContract = CompiledContract.make(
-  "QuoteOfTheDayContract",
-  Contract,
-).pipe(
-  CompiledContract.withWitnesses(witnesses),
-  CompiledContract.withCompiledFileAssets("dummy_path"),
-);
-
 export async function joinQuoteOfTheDayContract(
   providers: MidnightProviders<any>,
   contractAddress: string,
@@ -206,11 +196,12 @@ export async function joinQuoteOfTheDayContract(
     ? createQuoteOTDPrivateState(new Uint8Array(creatorIdentity.secretKey))
     : createQuoteOTDPrivateState(new Uint8Array(32));
 
-  // @ts-ignore
-  return await findDeployedContract(providers, {
-    compiledContract: browserCompiledContract,
+  const deployedQOTDContract = await findDeployedContract(providers, {
     contractAddress,
+    compiledContract: CompiledQuoteOfTheDayContract,
     privateStateId: "OwnerPrivateQuoteOTDState",
     initialPrivateState,
   });
+
+  return deployedQOTDContract;
 }

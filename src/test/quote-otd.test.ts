@@ -24,7 +24,6 @@ import {
   CompiledQuoteOfTheDayContract,
   Contract,
   ledger,
-  zkConfigPath,
 } from "../../contracts/index.js";
 
 import { QuoteOTDSimulator } from "./quote-otd-simulator.js";
@@ -135,7 +134,7 @@ describe(`Quote of The Day Contract (${network})`, () => {
       logger.info(`Wallet NIGHT balance on '${network}': ${nightBalance}`);
     }
 
-    providers = buildProviders(wallet, zkConfigPath, config);
+    providers = buildProviders(wallet, "contracts/managed/quote-otd", config);
     logger.info(`Providers initialized on '${network}'. Ready to test!`);
   });
 

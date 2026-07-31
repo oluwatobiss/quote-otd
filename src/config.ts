@@ -41,12 +41,12 @@ export const PREPROD_CONFIG: NetworkConfig = {
 };
 
 export function getConfig(): NetworkConfig {
-  let network = "local";
+  let network = "preview";
   if (typeof process !== "undefined" && process.env) {
-    network = process.env.MIDNIGHT_NETWORK ?? "local";
+    network = process.env.MIDNIGHT_NETWORK ?? "preview";
   } else if (typeof import.meta !== "undefined" && (import.meta as any).env) {
     // Vite uses import.meta.env
-    network = (import.meta as any).env.VITE_MIDNIGHT_NETWORK ?? "local";
+    network = (import.meta as any).env.VITE_MIDNIGHT_NETWORK ?? "preview";
   }
 
   if (network === "local") return LOCAL_CONFIG;
