@@ -15,7 +15,15 @@ export interface DeploymentInfo {
 
 export function ensureDeploymentInfo(network: string): DeploymentInfo {
   if (existsSync(DEPLOYMENT_FILE)) {
-    return JSON.parse(readFileSync(DEPLOYMENT_FILE, "utf8")) as DeploymentInfo;
+    const data = JSON.parse(readFileSync(DEPLOYMENT_FILE, "utf8")) as any;
+    if (data.secretKey) {
+      if (Array.isArray(data.secretKey)) {
+        data.secretKey = new Uint8Array(data.secretKey);
+      } else if (typeof data.secretKey === "object") {
+        data.secretKey = new Uint8Array(Object.values(data.secretKey));
+      }
+    }
+    return data as DeploymentInfo;
   }
 
   mkdirSync(dirname(DEPLOYMENT_FILE), { recursive: true });
@@ -25,17 +33,21 @@ export function ensureDeploymentInfo(network: string): DeploymentInfo {
     network,
   };
 
-  writeFileSync(
-    DEPLOYMENT_FILE,
-    JSON.stringify(deploymentInfo, null, 2),
-    "utf8",
-  );
+  const dataToSave = {
+    ...deploymentInfo,
+    secretKey: Array.from(deploymentInfo.secretKey),
+  };
+  writeFileSync(DEPLOYMENT_FILE, JSON.stringify(dataToSave, null, 2), "utf8");
 
   return deploymentInfo;
 }
 
 export function saveDeploymentInfo(data: DeploymentInfo): void {
-  writeFileSync(DEPLOYMENT_FILE, JSON.stringify(data, null, 2), "utf8");
+  const dataToSave = {
+    ...data,
+    secretKey: Array.from(data.secretKey),
+  };
+  writeFileSync(DEPLOYMENT_FILE, JSON.stringify(dataToSave, null, 2), "utf8");
 }
 
 export function ownerSecret(data: DeploymentInfo): Uint8Array {

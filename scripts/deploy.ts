@@ -6,6 +6,7 @@ import {
   deployContract,
   type DeployedContract,
 } from "@midnight-ntwrk/midnight-js-contracts";
+import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import {
   PRIVATE_STATE_ID,
   ensureDeploymentInfo,
@@ -79,6 +80,8 @@ async function main() {
     process.env["MIDNIGHT_SYNC_TIMEOUT_MS"] ??
       (isRemote ? 60 * 60_000 : 10 * 60_000),
   );
+
+  setNetworkId(config.networkId);
 
   const envConfig: EnvironmentConfiguration = {
     walletNetworkId: config.networkId,
