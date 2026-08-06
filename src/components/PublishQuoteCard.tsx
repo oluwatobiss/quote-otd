@@ -6,19 +6,19 @@ interface PublishQuoteCardProps {
   disabledReason: string | null;
 }
 
-export const PublishQuoteCard: React.FC<PublishQuoteCardProps> = ({
+export function PublishQuoteCard({
   onPublish,
   isDisabled,
   disabledReason,
-}) => {
+}: PublishQuoteCardProps) {
   const [quoteInput, setQuoteInput] = useState("");
 
-  const handlePublish = () => {
+  function handlePublish() {
     if (quoteInput.trim()) {
       onPublish(quoteInput.trim());
       setQuoteInput("");
     }
-  };
+  }
 
   return (
     <div className="card">
@@ -32,7 +32,6 @@ export const PublishQuoteCard: React.FC<PublishQuoteCardProps> = ({
           disabled={isDisabled}
           rows={3}
         />
-
         <button
           onClick={handlePublish}
           disabled={isDisabled || !quoteInput.trim()}
@@ -40,11 +39,10 @@ export const PublishQuoteCard: React.FC<PublishQuoteCardProps> = ({
         >
           Publish Quote
         </button>
-
         {isDisabled && disabledReason && (
           <p className="text-sm text-error">{disabledReason}</p>
         )}
       </div>
     </div>
   );
-};
+}

@@ -1,6 +1,6 @@
 import { ZKConfigProvider, type ZKIR } from "@midnight-ntwrk/midnight-js-types";
 
-export class FetchZkConfigProvider<
+export class FetchZkConfigReadonlyProvider<
   Circuits extends string,
 > extends ZKConfigProvider<Circuits> {
   private get baseUrl(): string {

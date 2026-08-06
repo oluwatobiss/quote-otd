@@ -24,10 +24,15 @@ import {
   buildReadonlyProviders,
   connectBrowserWallet,
   joinQuoteOfTheDayContract,
-  MidnightProvingClient,
+  // MidnightProvingClient,
   listWallets,
   type CreatorIdentity,
 } from "./midnightUtils";
+
+import {
+  QuoteContractClient,
+  DeployedQuoteService,
+} from "./quoteContractClient";
 
 function App() {
   const [contractAddress, setContractAddress] = useState<string | null>(null);
@@ -51,8 +56,11 @@ function App() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [provingClient, setProvingClient] =
-    useState<MidnightProvingClient | null>(null);
+  // const [provingClient, setProvingClient] =
+  //   useState<MidnightProvingClient | null>(null);
+
+  const [deployedQuoteService, setDeployedQuoteService] =
+    useState<DeployedQuoteService | null>(null);
 
   const [sharedLinkInput, setSharedLinkInput] = useState("");
 
@@ -73,27 +81,26 @@ function App() {
 
   // Initialize proving client when both wallet and identity are available
   useEffect(() => {
-    if (wallet && identity && !provingClient) {
+    if (wallet && identity && !deployedQuoteService) {
       const init = async () => {
         try {
-          const { providers, stateProvider } = await buildAppProviders(
-            wallet,
-            identity,
-          );
+          const { providers } = await buildAppProviders(wallet, identity);
           const contract = await joinQuoteOfTheDayContract(
             providers,
             identity.contractAddress,
             identity,
           );
-          setProvingClient(new MidnightProvingClient(contract, stateProvider));
+          setDeployedQuoteService(
+            await QuoteContractClient.build(contract, providers),
+          );
         } catch (err: any) {
-          console.error("Failed to initialize proving client:", err);
-          setErrorMessage("Failed to initialize proving client.");
+          console.error("Failed to initialize deployed quote service:", err);
+          setErrorMessage("Failed to initialize deployed quote service.");
         }
       };
       init();
     }
-  }, [wallet, identity, provingClient]);
+  }, [wallet, identity, deployedQuoteService]);
 
   async function loadPublicState(address: string) {
     try {
@@ -153,7 +160,7 @@ function App() {
   function handleDisconnect() {
     setWallet(null);
     setWalletAddress(null);
-    setProvingClient(null);
+    setDeployedQuoteService(null);
     setIdentity(null);
     setTxState("idle");
   }
@@ -170,14 +177,32 @@ function App() {
   }
 
   async function handlePublish(newQuote: string) {
-    if (!provingClient || !wallet || !identity) return;
+    if (!deployedQuoteService || !wallet || !identity) return;
 
     try {
       setTxState("proving");
       setTxHash(null);
       setErrorMessage(null);
 
-      const hash = await provingClient.provePost(newQuote);
+      // Race the publish promise with a state update promise
+      // This ensures that if the wallet transaction completes and updates the ledger,
+      // but the local hash polling hangs, we still successfully complete the flow.
+      const stateUpdatePromise = new Promise<string>((resolve) => {
+        const sub = deployedQuoteService.state$.subscribe((state) => {
+          if (state.quoteOfTheDay === newQuote) {
+            sub.unsubscribe();
+            resolve("Unknown Hash (View on Explorer)");
+          }
+        });
+      });
+
+      const hash = await Promise.race([
+        deployedQuoteService.publish(newQuote),
+        stateUpdatePromise,
+      ]);
+
+      console.log("=== handlePublish: App.tsx ===");
+      console.log(hash);
 
       setTxState("submitting");
       setTxHash(hash);
@@ -378,12 +403,12 @@ function App() {
                 <PublishQuoteCard
                   onPublish={handlePublish}
                   isDisabled={
-                    !provingClient ||
+                    !deployedQuoteService ||
                     txState === "proving" ||
                     txState === "submitting"
                   }
                   disabledReason={
-                    !provingClient
+                    !deployedQuoteService
                       ? "Connect Wallet and select Creator Identity to publish."
                       : txState === "proving" || txState === "submitting"
                         ? "Transaction in progress..."
