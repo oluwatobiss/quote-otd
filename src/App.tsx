@@ -1,38 +1,35 @@
 import { useState, useEffect } from "react";
-// @ts-ignore - allow side-effect CSS import without type declarations
-import "./App.css";
-import { Header } from "./components/Header";
-import { WalletCard } from "./components/WalletCard";
-import { CreatorIdentitySelector } from "./components/CreatorIdentitySelector";
-import { OwnerCard } from "./components/OwnerCard";
-import { CurrentQuoteCard } from "./components/CurrentQuoteCard";
-import { PublishQuoteCard } from "./components/PublishQuoteCard";
-import {
-  TransactionStatusCard,
-  type TxState,
-} from "./components/TransactionStatusCard";
-import { WalletPicker } from "./components/WalletPicker";
-import { SkeletonText } from "./components/Skeleton";
-import { ledger } from "../contracts/managed/quote-otd/contract/index.js";
-import { toHex } from "@midnight-ntwrk/midnight-js-utils";
 import type {
   ConnectedAPI,
   InitialAPI,
 } from "@midnight-ntwrk/dapp-connector-api";
+import { toHex } from "@midnight-ntwrk/midnight-js-utils";
+import { CreatorIdentitySelector } from "./components/CreatorIdentitySelector";
+import { CurrentQuoteCard } from "./components/CurrentQuoteCard";
+import { Header } from "./components/Header";
+import { OwnerCard } from "./components/OwnerCard";
+import { PublishQuoteCard } from "./components/PublishQuoteCard";
+import { SkeletonText } from "./components/Skeleton";
+import {
+  TransactionStatusCard,
+  type TxState,
+} from "./components/TransactionStatusCard";
+import { WalletCard } from "./components/WalletCard";
+import { WalletPicker } from "./components/WalletPicker";
 import {
   buildAppProviders,
-  buildReadonlyProviders,
   connectBrowserWallet,
   joinQuoteOfTheDayContract,
-  // MidnightProvingClient,
   listWallets,
   type CreatorIdentity,
 } from "./midnightUtils";
-
 import {
   QuoteContractClient,
   DeployedQuoteService,
 } from "./quoteContractClient";
+import { ledger } from "../contracts/managed/quote-otd/contract/index.js";
+// @ts-ignore - allow side-effect CSS import without type declarations
+import "./App.css";
 
 function App() {
   const [contractAddress, setContractAddress] = useState<string | null>(null);
@@ -55,9 +52,6 @@ function App() {
   const [txState, setTxState] = useState<TxState>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // const [provingClient, setProvingClient] =
-  //   useState<MidnightProvingClient | null>(null);
 
   const [deployedQuoteService, setDeployedQuoteService] =
     useState<DeployedQuoteService | null>(null);
@@ -106,7 +100,7 @@ function App() {
     try {
       setIsLoadingPublicState(true);
       setIsInvalidContract(false);
-      const providers = buildReadonlyProviders();
+      const { providers } = await buildAppProviders();
       const contract = await joinQuoteOfTheDayContract(
         providers,
         address,

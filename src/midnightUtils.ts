@@ -57,11 +57,11 @@ export async function connectBrowserWallet(
     // Hint usage to prompt the user for permissions
     try {
       await connectedApi.hintUsage([
-        'balanceUnsealedTransaction',
-        'balanceSealedTransaction',
-        'submitTransaction',
-        'getShieldedAddresses',
-        'getUnshieldedAddress'
+        "balanceUnsealedTransaction",
+        "balanceSealedTransaction",
+        "submitTransaction",
+        "getShieldedAddresses",
+        "getUnshieldedAddress",
       ]);
     } catch (e) {
       console.warn("hintUsage failed or not supported by wallet", e);
@@ -83,24 +83,24 @@ export async function connectBrowserWallet(
       const txStr = toHex(tx.serialize());
       const balanced = await connectedApi.balanceUnsealedTransaction(txStr);
       return Transaction.deserialize(
-        'signature',
-        'proof',
-        'binding',
-        fromHex(balanced.tx)
+        "signature",
+        "proof",
+        "binding",
+        fromHex(balanced.tx),
       );
     };
     (connectedApi as any).submitTx = async (tx: any) => {
       const txStr = toHex(tx.serialize());
       const walletHash = (await connectedApi.submitTransaction(txStr)) as any;
-      if (typeof walletHash === 'string' && walletHash.trim() !== '') {
+      if (typeof walletHash === "string" && walletHash.trim() !== "") {
         return walletHash;
       }
-      if (walletHash && typeof walletHash === 'object') {
-        if (typeof walletHash.txHash === 'string') return walletHash.txHash;
-        if (typeof walletHash.hash === 'string') return walletHash.hash;
+      if (walletHash && typeof walletHash === "object") {
+        if (typeof walletHash.txHash === "string") return walletHash.txHash;
+        if (typeof walletHash.hash === "string") return walletHash.hash;
       }
       const hash = tx.transactionHash();
-      return typeof hash === 'string' ? hash : toHex(hash);
+      return typeof hash === "string" ? hash : toHex(hash);
     };
 
     console.log({
@@ -137,7 +137,7 @@ export class MemoryPrivateStateProvider implements PrivateStateProvider<
     this.state = null;
   }
 
-  async setContractAddress(address: string): Promise<void> { }
+  async setContractAddress(address: string): Promise<void> {}
 
   async getSigningKey(address: any): Promise<any> {
     return this.signingKey;
@@ -168,56 +168,21 @@ export interface CreatorIdentity {
 }
 
 export async function buildAppProviders(
-  wallet: ConnectedAPI,
-  creatorIdentity: CreatorIdentity | null,
+  wallet?: ConnectedAPI,
+  creatorIdentity?: CreatorIdentity | null,
 ): Promise<{
   providers: MidnightProviders<any>;
-  stateProvider: MemoryPrivateStateProvider;
+  stateProvider?: MemoryPrivateStateProvider;
 }> {
-  const walletConfig = await wallet.getConfiguration();
-  // @ts-ignore
-  const basePath = import.meta.env?.DEV ? "/contracts/managed/quote-otd" : "";
-  const zkConfigProvider = new FetchZkConfigProvider<QuoteOfTheDayCircuits>(
-    window.location.origin + basePath,
-    fetch.bind(window),
-  );
+  function createPrivateState(creatorIdentity: CreatorIdentity) {
+    return createQuoteOTDPrivateState(
+      new Uint8Array(creatorIdentity.secretKey),
+    );
+  }
 
-  // Ephemeral memory state!
-  // If we have an identity, use it. Otherwise, use dummy.
-  const privateState = creatorIdentity
-    ? createQuoteOTDPrivateState(new Uint8Array(creatorIdentity.secretKey))
-    : createQuoteOTDPrivateState(new Uint8Array(32));
-
-  const privateStateProvider = new MemoryPrivateStateProvider(privateState);
-
-  return {
-    providers: {
-      privateStateProvider: privateStateProvider as any,
-      publicDataProvider: indexerPublicDataProvider(
-        walletConfig.indexerUri,
-        walletConfig.indexerWsUri,
-      ),
-      zkConfigProvider: zkConfigProvider as any,
-      proofProvider: httpClientProofProvider(
-        getConfig().proofServer,
-        zkConfigProvider as any,
-      ),
-      walletProvider: wallet as any,
-      midnightProvider: wallet as any,
-    },
-    stateProvider: privateStateProvider,
-  };
-}
-
-export function buildReadonlyProviders(): MidnightProviders {
-  // @ts-ignore
-  const basePath = import.meta.env?.DEV ? "/contracts/managed/quote-otd" : "";
-  const zkConfigProvider = new FetchZkConfigProvider<QuoteOfTheDayCircuits>(
-    window.location.origin + basePath,
-    fetch.bind(window),
-  );
-  const config = getConfig();
-  setNetworkId(config.networkId);
+  const privateStateProvider =
+    creatorIdentity &&
+    new MemoryPrivateStateProvider(createPrivateState(creatorIdentity));
   const inMemoryBBoardPrivateStateProvider = inMemoryPrivateStateProvider<
     string,
     QuoteOTDPrivateState
@@ -235,36 +200,36 @@ export function buildReadonlyProviders(): MidnightProviders {
     getEncryptionPublicKey: () =>
       "0000000000000000000000000000000000000000000000000000000000000000",
   };
+  const walletConfig = await wallet?.getConfiguration();
+  // @ts-ignore
+  const basePath = import.meta.env?.DEV ? "/contracts/managed/quote-otd" : "";
+  const zkConfigProvider = new FetchZkConfigProvider<QuoteOfTheDayCircuits>(
+    window.location.origin + basePath,
+    fetch.bind(window),
+  );
+  const config = getConfig();
 
+  setNetworkId(config.networkId);
   return {
-    privateStateProvider: inMemoryBBoardPrivateStateProvider,
-    publicDataProvider: indexerPublicDataProvider(
-      config.indexer,
-      config.indexerWS,
-    ),
-    zkConfigProvider: zkConfigProvider as any,
-    proofProvider: httpClientProofProvider(
-      config.proofServer,
-      zkConfigProvider as any,
-    ),
-    walletProvider: dummyWallet as any,
-    midnightProvider: dummyWallet as any,
-  } as any;
+    providers: {
+      privateStateProvider: creatorIdentity
+        ? (privateStateProvider as any)
+        : inMemoryBBoardPrivateStateProvider,
+      publicDataProvider: indexerPublicDataProvider(
+        walletConfig ? walletConfig.indexerUri : config.indexer,
+        walletConfig ? walletConfig.indexerWsUri : config.indexerWS,
+      ),
+      zkConfigProvider: zkConfigProvider as any,
+      proofProvider: httpClientProofProvider(
+        config.proofServer,
+        zkConfigProvider as any,
+      ),
+      walletProvider: wallet ? (wallet as any) : (dummyWallet as any),
+      midnightProvider: wallet ? (wallet as any) : (dummyWallet as any),
+    },
+    ...(privateStateProvider && { stateProvider: privateStateProvider }),
+  };
 }
-
-// export class MidnightProvingClient {
-//   constructor(
-//     private contract: any,
-//     private stateProvider: MemoryPrivateStateProvider,
-//   ) {}
-
-//   async provePost(newQuote: string): Promise<string> {
-//     const tx = await this.contract.callTx.post(newQuote);
-//     // After provePost succeeds, the private state must be wiped.
-//     await this.stateProvider.clear();
-//     return tx.txHash || "unknown_hash";
-//   }
-// }
 
 export async function joinQuoteOfTheDayContract(
   providers: MidnightProviders<any>,
