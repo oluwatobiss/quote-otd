@@ -19,6 +19,11 @@
     "src/**/*.ts",
     "contract/**/*.ts",
     "scripts/**/*.ts",
-    "lib/crypto.ts"
+    "utils/crypto.ts",
+    "providers/buildProviders.ts",
+    "providers/inMemoryPrivateStateProvider.ts",
+    "utils/witnesses.ts",
+    "utils/config.ts",
+    "utils/wallet.ts"
   ]
 }

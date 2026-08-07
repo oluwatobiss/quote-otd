@@ -3,10 +3,7 @@ interface OwnerCardProps {
   isOwner: boolean;
 }
 
-export const OwnerCard: React.FC<OwnerCardProps> = ({
-  ownerPublicKey,
-  isOwner,
-}) => {
+export function OwnerCard({ ownerPublicKey, isOwner }: OwnerCardProps) {
   return (
     <div className="card">
       <h2>Owner</h2>
@@ -30,4 +27,4 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
       </div>
     </div>
   );
-};
+}

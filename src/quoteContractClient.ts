@@ -1,57 +1,57 @@
-import * as QuoteOTD from "../contracts/managed/quote-otd/contract/index.js";
 import { type ContractAddress } from "@midnight-ntwrk/midnight-js-protocol/compact-runtime";
 import { type MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
 import { type FoundContract } from "@midnight-ntwrk/midnight-js-contracts";
 import { type Logger } from "pino";
-import { type QuoteOTDPrivateState } from "./witnesses.js";
 import { type Observable, combineLatest, map, from } from "rxjs";
 import { toHex } from "@midnight-ntwrk/midnight-js-utils";
 import { Contract } from "../contracts/index";
+import * as Quote from "../contracts/managed/quote-otd/contract/index.js";
+import { PRIVATE_STATE_ID } from "../utils/config.js";
+import { type QuotePrivateState } from "../utils/witnesses.js";
 
-export const quoteOTDPrivateStateKey = "OwnerPrivateQuoteOTDState";
-export type PrivateStateId = typeof quoteOTDPrivateStateKey;
+export type PrivateStateId = typeof PRIVATE_STATE_ID;
 
-type QuoteOTDContract = Contract<
-  QuoteOTDPrivateState,
-  QuoteOTD.Witnesses<QuoteOTDPrivateState>
+type QuoteContract = Contract<
+  QuotePrivateState,
+  Quote.Witnesses<QuotePrivateState>
 >;
 type BBoardCircuitKeys = Exclude<
-  keyof QuoteOTDContract["impureCircuits"],
+  keyof QuoteContract["impureCircuits"],
   number | symbol
 >;
-type QuoteOTDProviders = MidnightProviders<
+type QuoteProviders = MidnightProviders<
   BBoardCircuitKeys,
   PrivateStateId,
-  QuoteOTDPrivateState
+  QuotePrivateState
 >;
-type DeployedQuoteOTDContract = FoundContract<QuoteOTDContract>;
+type DeployedQuoteContract = FoundContract<QuoteContract>;
 
 /**
  * A type that represents the derived combination of public (or ledger), and private state.
  */
-type QuoteOTDDerivedState = {
+type QuoteDerivedState = {
   readonly quoteOfTheDay: string;
   readonly isOwner: boolean;
 };
 
 export interface DeployedQuoteService {
   readonly deployedContractAddress: ContractAddress;
-  readonly state$: Observable<QuoteOTDDerivedState>;
+  readonly state$: Observable<QuoteDerivedState>;
   publish: (newQuote: string) => Promise<string>;
 }
 
 export class QuoteContractClient implements DeployedQuoteService {
   static async build(
-    deployedContract: DeployedQuoteOTDContract,
-    providers: QuoteOTDProviders,
+    deployedContract: DeployedQuoteContract,
+    providers: QuoteProviders,
     logger?: Logger,
   ): Promise<QuoteContractClient> {
     return new QuoteContractClient(deployedContract, providers, logger);
   }
 
   private constructor(
-    public readonly deployedContract: DeployedQuoteOTDContract,
-    providers: QuoteOTDProviders,
+    public readonly deployedContract: DeployedQuoteContract,
+    providers: QuoteProviders,
     private readonly logger?: Logger,
   ) {
     this.deployedContractAddress =
@@ -66,17 +66,17 @@ export class QuoteContractClient implements DeployedQuoteService {
           .contractStateObservable(this.deployedContractAddress, {
             type: "latest",
           })
-          .pipe(map((contractState) => QuoteOTD.ledger(contractState.data))),
+          .pipe(map((contractState) => Quote.ledger(contractState.data))),
         // ...private state...
         from(
           providers.privateStateProvider.get(
-            quoteOTDPrivateStateKey,
-          ) as Promise<QuoteOTDPrivateState>,
+            PRIVATE_STATE_ID,
+          ) as Promise<QuotePrivateState>,
         ),
       ],
       // ...and combine them to produce the required derived state.
       (ledgerState, privateState) => {
-        const hashedSecretKey = QuoteOTD.pureCircuits.publicKey(
+        const hashedSecretKey = Quote.pureCircuits.publicKey(
           privateState.secretKey,
         );
 
@@ -89,20 +89,11 @@ export class QuoteContractClient implements DeployedQuoteService {
   }
 
   readonly deployedContractAddress: ContractAddress;
-  readonly state$: Observable<QuoteOTDDerivedState>;
+  readonly state$: Observable<QuoteDerivedState>;
   async publish(newQuote: string): Promise<string> {
     this.logger?.info(`postingMessage: ${newQuote}`);
 
     const txData = await this.deployedContract.callTx.post(newQuote);
-
-    console.log("=== publish: quoteContractClient.ts ===");
-    console.log({
-      transactionAdded: {
-        circuit: "post",
-        txHash: txData.public.txHash,
-        blockHeight: txData.public.blockHeight,
-      },
-    });
 
     this.logger?.trace({
       transactionAdded: {

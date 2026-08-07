@@ -1,40 +1,39 @@
 import * as fs from "fs";
 import * as path from "path";
 import pino from "pino";
-import { getConfig } from "../src/config.js";
 import {
   deployContract,
   type DeployedContract,
 } from "@midnight-ntwrk/midnight-js-contracts";
 import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import {
-  PRIVATE_STATE_ID,
+  waitForFunds,
+  type EnvironmentConfiguration,
+} from "@midnight-ntwrk/testkit-js";
+import {
   ensureDeploymentInfo,
   ownerSecret,
   saveDeploymentInfo,
 } from "./deployment.js";
-import { CompiledQuoteOfTheDayContract, Contract } from "../contracts/index.js";
+import { CompiledQuoteContract, Contract } from "../contracts/index.js";
 import {
   buildProviders,
   type QuoteOfTheDayProviders,
-} from "../src/providers.js";
+} from "../providers/buildProviders.js";
+import { MidnightWalletProvider } from "../providers/walletProviders";
+import { syncWallet } from "../utils/wallet.js";
 import {
-  type EnvironmentConfiguration,
-  waitForFunds,
-} from "@midnight-ntwrk/testkit-js";
-import {
-  MidnightWalletProvider,
-  syncWallet,
-  type WalletSecret,
-} from "../src/wallet.js";
-import { createQuoteOTDPrivateState } from "../src/witnesses.js";
+  getConfig,
+  OWNER_LOCAL_SEED,
+  PRIVATE_STATE_ID,
+} from "../utils/config.js";
+import type { WalletSecret } from "../utils/quote.types";
+import { createQuotePrivateState } from "../utils/witnesses.js";
 
 async function main() {
   let wallet: MidnightWalletProvider;
   let providers: QuoteOfTheDayProviders;
 
-  const OWNER_LOCAL_SEED =
-    "0000000000000000000000000000000000000000000000000000000000000001";
   const logger = pino({
     level: process.env["LOG_LEVEL"] ?? "info",
     transport: { target: "pino-pretty" },
@@ -117,11 +116,9 @@ async function main() {
   const deployed: DeployedContract<Contract> = await deployContract<Contract>(
     providers,
     {
-      compiledContract: CompiledQuoteOfTheDayContract,
+      compiledContract: CompiledQuoteContract,
       privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState: createQuoteOTDPrivateState(
-        ownerSecret(deploymentInfo),
-      ),
+      initialPrivateState: createQuotePrivateState(ownerSecret(deploymentInfo)),
     },
   );
 

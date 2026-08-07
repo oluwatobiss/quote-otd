@@ -8,11 +8,11 @@ interface TransactionStatusCardProps {
 
 export const Spinner: React.FC = () => <div className="spinner"></div>;
 
-export const TransactionStatusCard: React.FC<TransactionStatusCardProps> = ({
+export function TransactionStatusCard({
   txState,
   txHash,
   errorMessage,
-}) => {
+}: TransactionStatusCardProps) {
   if (txState === "idle") return null;
 
   return (
@@ -98,4 +98,4 @@ export const TransactionStatusCard: React.FC<TransactionStatusCardProps> = ({
       )}
     </div>
   );
-};
+}

@@ -1,4 +1,4 @@
-export const Header: React.FC = () => {
+export function Header() {
   return (
     <header className="mb-8 text-center animate-fade-in-up">
       <h1>Quote of the Day</h1>
@@ -7,4 +7,4 @@ export const Header: React.FC = () => {
       </p>
     </header>
   );
-};
+}

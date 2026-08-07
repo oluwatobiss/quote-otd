@@ -1,8 +1,8 @@
 import {
   type CoinPublicKey,
-  DustSecretKey,
   type EncPublicKey,
   type FinalizedTransaction,
+  DustSecretKey,
   LedgerParameters,
   ZswapSecretKeys,
 } from "@midnight-ntwrk/midnight-js-protocol/ledger";
@@ -12,22 +12,17 @@ import type {
   WalletProvider,
 } from "@midnight-ntwrk/midnight-js-types";
 import { ttlOneHour } from "@midnight-ntwrk/midnight-js-utils";
-import type {
-  WalletFacade,
-  FacadeState,
-  UnshieldedKeystore,
-} from "@midnight-ntwrk/wallet-sdk";
 import {
   type DustWalletOptions,
   type EnvironmentConfiguration,
   FluentWalletBuilder,
 } from "@midnight-ntwrk/testkit-js";
-import * as Rx from "rxjs";
+import type {
+  WalletFacade,
+  UnshieldedKeystore,
+} from "@midnight-ntwrk/wallet-sdk";
 import type { Logger } from "pino";
-
-export type WalletSecret =
-  | { kind: "seed"; value: string }
-  | { kind: "mnemonic"; value: string };
+import type { WalletSecret } from "../utils/quote.types";
 
 export class MidnightWalletProvider
   implements MidnightProvider, WalletProvider
@@ -123,79 +118,4 @@ export class MidnightWalletProvider
       keystore,
     );
   }
-}
-
-function isProgressStrictlyComplete(progress: unknown): boolean {
-  if (!progress || typeof progress !== "object") {
-    return false;
-  }
-  const candidate = progress as { isStrictlyComplete?: unknown };
-  if (typeof candidate.isStrictlyComplete !== "function") {
-    return false;
-  }
-  return (candidate.isStrictlyComplete as () => boolean)();
-}
-
-export async function syncWallet(
-  logger: Logger,
-  wallet: WalletFacade,
-  timeout = 300_000,
-): Promise<FacadeState> {
-  logger.info("Syncing wallet...");
-  let emissionCount = 0;
-  return Rx.firstValueFrom(
-    wallet.state().pipe(
-      Rx.tap((state: FacadeState) => {
-        emissionCount++;
-        const shielded = isProgressStrictlyComplete(
-          state.shielded.state.progress,
-        );
-        const unshielded = isProgressStrictlyComplete(
-          state.unshielded.progress,
-        );
-        const dust = isProgressStrictlyComplete(state.dust.state.progress);
-        logger.info(
-          `Wallet sync [${emissionCount}]: shielded=${shielded}, unshielded=${unshielded}, dust=${dust}`,
-        );
-        if (!shielded) {
-          logger.debug(
-            `  shielded.progress: ${JSON.stringify(state.shielded.state.progress)}`,
-          );
-        }
-        if (!unshielded) {
-          logger.debug(
-            `  unshielded.progress: ${JSON.stringify(state.unshielded.progress)}`,
-          );
-        }
-        if (!dust) {
-          logger.debug(
-            `  dust.progress: ${JSON.stringify(state.dust.state.progress)}`,
-          );
-        }
-      }),
-      Rx.filter(
-        (state: FacadeState) =>
-          isProgressStrictlyComplete(state.shielded.state.progress) &&
-          isProgressStrictlyComplete(state.dust.state.progress) &&
-          isProgressStrictlyComplete(state.unshielded.progress),
-      ),
-      Rx.tap(() =>
-        logger.info(`Wallet sync complete after ${emissionCount} emissions`),
-      ),
-      Rx.timeout({
-        each: timeout,
-        with: () =>
-          Rx.throwError(
-            () =>
-              new Error(
-                `Wallet sync timeout after ${timeout}ms (${emissionCount} emissions received)`,
-              ),
-          ),
-      }),
-      Rx.catchError((err) => {
-        logger.error(`Wallet sync error: ${err}`);
-        return Rx.throwError(() => err);
-      }),
-    ),
-  );
 }

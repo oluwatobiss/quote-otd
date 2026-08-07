@@ -2,9 +2,7 @@ interface CurrentQuoteCardProps {
   quote: string | null;
 }
 
-export const CurrentQuoteCard: React.FC<CurrentQuoteCardProps> = ({
-  quote,
-}) => {
+export function CurrentQuoteCard({ quote }: CurrentQuoteCardProps) {
   return (
     <div className="card quote-card">
       <h2>Current Quote</h2>
@@ -19,4 +17,4 @@ export const CurrentQuoteCard: React.FC<CurrentQuoteCardProps> = ({
       </div>
     </div>
   );
-};
+}

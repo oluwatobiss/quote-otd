@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { CreatorIdentity } from "../midnightUtils";
+import type { CreatorIdentity } from "../../utils/quote.types";
 
 interface CreatorIdentitySelectorProps {
   onIdentityLoaded: (identity: CreatorIdentity) => void;

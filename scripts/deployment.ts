@@ -1,11 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { randomBytes } from "../lib/crypto.js";
+import { randomBytes } from "../utils/crypto.js";
 
 export const MIDNIGHT_DIR = resolve(process.cwd(), ".midnight");
 export const DEPLOYMENT_FILE = resolve(MIDNIGHT_DIR, "deployment.json");
-
-export const PRIVATE_STATE_ID = "OwnerPrivateQuoteOTDState";
 
 export interface DeploymentInfo {
   secretKey: Uint8Array<ArrayBufferLike>;

@@ -1,34 +1,37 @@
+import pino from "pino";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { WebSocket } from "ws";
-import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import {
   deployContract,
   submitCallTx,
   type DeployedContract,
 } from "@midnight-ntwrk/midnight-js-contracts";
+import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import type { ContractAddress } from "@midnight-ntwrk/midnight-js-protocol/compact-runtime";
 import {
   type EnvironmentConfiguration,
   waitForFunds,
 } from "@midnight-ntwrk/testkit-js";
-import pino from "pino";
-
-import { getConfig } from "../config.js";
+import { QuoteSimulator } from "./quote-simulator.js";
+import { syncWallet } from "../../utils/wallet.js";
 import {
-  MidnightWalletProvider,
-  syncWallet,
-  type WalletSecret,
-} from "../wallet.js";
-import { buildProviders, type QuoteOfTheDayProviders } from "../providers.js";
-import {
-  CompiledQuoteOfTheDayContract,
+  CompiledQuoteContract,
   Contract,
   ledger,
 } from "../../contracts/index.js";
-
-import { QuoteOTDSimulator } from "./quote-otd-simulator.js";
-import { randomBytes } from "../../lib/crypto.js";
-import { createQuoteOTDPrivateState } from "../witnesses.js";
+import { MidnightWalletProvider } from "../../providers/walletProviders.js";
+import {
+  buildProviders,
+  type QuoteOfTheDayProviders,
+} from "../../providers/buildProviders.js";
+import type { WalletSecret } from "../../utils/quote.types.js";
+import {
+  getConfig,
+  OWNER_LOCAL_SEED,
+  PRIVATE_STATE_ID,
+} from "../../utils/config.js";
+import { randomBytes } from "../../utils/crypto.js";
+import { createQuotePrivateState } from "../../utils/witnesses.js";
 
 // Required for GraphQL subscriptions in Node.js
 // @ts-expect-error WebSocket global assignment for apollo
@@ -42,10 +45,6 @@ process.on("unhandledRejection", (reason, promise) => {
 process.on("uncaughtException", (err) => {
   console.error("UNCAUGHT EXCEPTION:", err);
 });
-
-const OWNER_LOCAL_SEED =
-  "0000000000000000000000000000000000000000000000000000000000000001";
-const PRIVATE_STATE_ID = "OwnerPrivateQuoteOTDState";
 
 const logger = pino({
   level: process.env["LOG_LEVEL"] ?? "info",
@@ -151,9 +150,9 @@ describe(`Quote of The Day Contract (${network})`, () => {
     const deployed: DeployedContract<Contract> = await deployContract<Contract>(
       providers,
       {
-        compiledContract: CompiledQuoteOfTheDayContract,
+        compiledContract: CompiledQuoteContract,
         privateStateId: PRIVATE_STATE_ID,
-        initialPrivateState: createQuoteOTDPrivateState(randomBytes(32)),
+        initialPrivateState: createQuotePrivateState(randomBytes(32)),
       },
     );
 
@@ -170,14 +169,14 @@ describe(`Quote of The Day Contract (${network})`, () => {
 
   it("generates initial ledger state deterministically", () => {
     const ownerSecretKey = randomBytes(32);
-    const simulator0 = new QuoteOTDSimulator(ownerSecretKey);
-    const simulator1 = new QuoteOTDSimulator(ownerSecretKey);
+    const simulator0 = new QuoteSimulator(ownerSecretKey);
+    const simulator1 = new QuoteSimulator(ownerSecretKey);
     expect(simulator0.getLedger()).toEqual(simulator1.getLedger());
   });
 
   it("properly initializes ledger state and private state", () => {
     const ownerSecretKey = randomBytes(32);
-    const simulator = new QuoteOTDSimulator(ownerSecretKey);
+    const simulator = new QuoteSimulator(ownerSecretKey);
     const initialLedgerState = simulator.getLedger();
     const initialPublicKey = simulator.publicKey();
     const initialPrivateState = simulator.getPrivateState();
@@ -190,7 +189,7 @@ describe(`Quote of The Day Contract (${network})`, () => {
     const quote =
       "A quitter never wins—and—a winner never quits. — Napoleon Hill";
     await submitCallTx<Contract, "post">(providers, {
-      compiledContract: CompiledQuoteOfTheDayContract,
+      compiledContract: CompiledQuoteContract,
       contractAddress,
       privateStateId: PRIVATE_STATE_ID,
       circuitId: "post",
@@ -203,14 +202,14 @@ describe(`Quote of The Day Contract (${network})`, () => {
   it("lets the owner post in the local Compact simulator", () => {
     const quote =
       "A quitter never wins—and—a winner never quits. — Napoleon Hill";
-    const simulator = new QuoteOTDSimulator(randomBytes(32));
+    const simulator = new QuoteSimulator(randomBytes(32));
     simulator.post(quote);
     const ledgerState = simulator.getLedger();
     expect(ledgerState.quoteOfTheDay).toEqual(quote);
   });
 
   it("lets owner post a new quote", () => {
-    const simulator = new QuoteOTDSimulator(randomBytes(32));
+    const simulator = new QuoteSimulator(randomBytes(32));
     const initialPublicKey = simulator.publicKey();
     const initialPrivateState = simulator.getPrivateState();
     const quote =
@@ -226,7 +225,7 @@ describe(`Quote of The Day Contract (${network})`, () => {
   });
 
   it("lets owner post multiple times", () => {
-    const simulator = new QuoteOTDSimulator(randomBytes(32));
+    const simulator = new QuoteSimulator(randomBytes(32));
     const initialPublicKey = simulator.publicKey();
     const initialPrivateState = simulator.getPrivateState();
     const quote1 =
@@ -252,7 +251,7 @@ describe(`Quote of The Day Contract (${network})`, () => {
   });
 
   it("doesn't let non-owner post", () => {
-    const simulator = new QuoteOTDSimulator(randomBytes(32));
+    const simulator = new QuoteSimulator(randomBytes(32));
     simulator.switchUser(randomBytes(32));
     expect(() =>
       simulator.post(

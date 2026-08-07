@@ -16,18 +16,15 @@ import {
 } from "./components/TransactionStatusCard";
 import { WalletCard } from "./components/WalletCard";
 import { WalletPicker } from "./components/WalletPicker";
-import {
-  buildAppProviders,
-  connectBrowserWallet,
-  joinQuoteOfTheDayContract,
-  listWallets,
-  type CreatorIdentity,
-} from "./midnightUtils";
+import { joinQuoteContract } from "./joinQuoteContract";
 import {
   QuoteContractClient,
   DeployedQuoteService,
 } from "./quoteContractClient";
-import { ledger } from "../contracts/managed/quote-otd/contract/index.js";
+import { ledger } from "../contracts/managed/quote-otd/contract/index";
+import { buildAppProviders } from "../providers/buildAppProviders";
+import type { CreatorIdentity } from "../utils/quote.types";
+import { connectBrowserWallet, listWallets } from "../utils/wallet";
 // @ts-ignore - allow side-effect CSS import without type declarations
 import "./App.css";
 
@@ -79,7 +76,7 @@ function App() {
       const init = async () => {
         try {
           const { providers } = await buildAppProviders(wallet, identity);
-          const contract = await joinQuoteOfTheDayContract(
+          const contract = await joinQuoteContract(
             providers,
             identity.contractAddress,
             identity,
@@ -101,11 +98,7 @@ function App() {
       setIsLoadingPublicState(true);
       setIsInvalidContract(false);
       const { providers } = await buildAppProviders();
-      const contract = await joinQuoteOfTheDayContract(
-        providers,
-        address,
-        null,
-      );
+      const contract = await joinQuoteContract(providers, address, null);
 
       providers.publicDataProvider
         .contractStateObservable(contract.deployTxData.public.contractAddress, {
@@ -194,9 +187,6 @@ function App() {
         deployedQuoteService.publish(newQuote),
         stateUpdatePromise,
       ]);
-
-      console.log("=== handlePublish: App.tsx ===");
-      console.log(hash);
 
       setTxState("submitting");
       setTxHash(hash);
