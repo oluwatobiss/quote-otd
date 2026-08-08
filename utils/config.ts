@@ -20,6 +20,7 @@ export const LOCAL_CONFIG: NetworkConfig = {
   faucet: "",
 };
 
+export const network = process.env["MIDNIGHT_NETWORK"] ?? "local";
 export const OWNER_LOCAL_SEED =
   "0000000000000000000000000000000000000000000000000000000000000001";
 

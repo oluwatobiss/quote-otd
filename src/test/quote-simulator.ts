@@ -7,8 +7,8 @@ import {
 } from "@midnight-ntwrk/compact-runtime";
 import {
   Contract,
-  type Ledger,
   ledger,
+  type Ledger,
 } from "../../contracts/managed/quote-otd/contract/index.js";
 import { type QuotePrivateState, witnesses } from "../../utils/witnesses.js";
 

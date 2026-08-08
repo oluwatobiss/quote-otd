@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import { loadEnv } from "vite";
+import { network } from "./utils/config.js";
 
-const network = process.env["MIDNIGHT_NETWORK"] ?? "local";
 const isRemote = network !== "local";
 
 // For remote networks, source secrets (e.g. MIDNIGHT_PREVIEW_SEED) from

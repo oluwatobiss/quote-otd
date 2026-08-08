@@ -1,5 +1,4 @@
 /*
- * This file is part of example-bboard.
  * Copyright (C) Midnight Foundation
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -65,15 +64,16 @@ export function inMemoryPrivateStateProvider<
   const encode = <T>(value: T): string => JSON.stringify(value);
   const decode = <T>(value: string): T => JSON.parse(value) as T;
 
-  const exportPrivateStatePayload = (
+  function exportPrivateStatePayload(
     address: ContractAddress,
-  ): Record<string, string> =>
-    Object.fromEntries(
+  ): Record<string, string> {
+    return Object.fromEntries(
       Array.from(getScopedStates(address).entries()).map(([stateId, value]) => [
         stateId,
         encode(value),
       ]),
     );
+  }
 
   const exportSigningKeyPayload = (): Record<ContractAddress, SigningKey> =>
     Object.fromEntries(signingKeys.entries());

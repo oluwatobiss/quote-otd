@@ -7,13 +7,13 @@ import type { MidnightWalletProvider } from "./walletProviders";
 import type { NetworkConfig } from "../utils/config";
 import type { QuoteOfTheDayCircuits } from "../utils/quote.types";
 
-export type QuoteOfTheDayProviders = MidnightProviders<any>;
+export type QuoteProviders = MidnightProviders<any>;
 
 export function buildProviders(
   wallet: MidnightWalletProvider,
   zkConfigPath: string,
   config: NetworkConfig,
-): QuoteOfTheDayProviders {
+): QuoteProviders {
   const zkConfigProvider = new NodeZkConfigProvider<QuoteOfTheDayCircuits>(
     zkConfigPath,
   );

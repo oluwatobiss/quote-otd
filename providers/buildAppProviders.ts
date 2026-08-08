@@ -18,18 +18,17 @@ import {
 
 export async function buildAppProviders(
   wallet?: ConnectedAPI,
-  creatorIdentity?: CreatorIdentity | null,
+  creatorId?: CreatorIdentity | null,
 ): Promise<{
   providers: MidnightProviders<any>;
   stateProvider?: MemoryPrivateStateProvider;
 }> {
-  function createPrivateState(creatorIdentity: CreatorIdentity) {
-    return createQuotePrivateState(new Uint8Array(creatorIdentity.secretKey));
+  function createPrivateState(creatorId: CreatorIdentity) {
+    return createQuotePrivateState(new Uint8Array(creatorId.secretKey));
   }
 
   const privateStateProvider =
-    creatorIdentity &&
-    new MemoryPrivateStateProvider(createPrivateState(creatorIdentity));
+    creatorId && new MemoryPrivateStateProvider(createPrivateState(creatorId));
   // Dummy wallet for read-only
   const dummyWallet: any = {
     balanceTx: async () => {
@@ -55,7 +54,7 @@ export async function buildAppProviders(
   setNetworkId(config.networkId);
   return {
     providers: {
-      privateStateProvider: creatorIdentity
+      privateStateProvider: creatorId
         ? (privateStateProvider as any)
         : inMemoryPrivateStateProvider<string, QuotePrivateState>(),
       publicDataProvider: indexerPublicDataProvider(

@@ -12,26 +12,18 @@ import {
   type EnvironmentConfiguration,
   waitForFunds,
 } from "@midnight-ntwrk/testkit-js";
-import { QuoteSimulator } from "./quote-simulator.js";
-import { syncWallet } from "../../utils/wallet.js";
-import {
-  CompiledQuoteContract,
-  Contract,
-  ledger,
-} from "../../contracts/index.js";
-import { MidnightWalletProvider } from "../../providers/walletProviders.js";
+import { QuoteSimulator } from "./quote-simulator";
+import { CompiledQuoteContract, Contract, ledger } from "../../contracts/index";
 import {
   buildProviders,
-  type QuoteOfTheDayProviders,
-} from "../../providers/buildProviders.js";
-import type { WalletSecret } from "../../utils/quote.types.js";
-import {
-  getConfig,
-  OWNER_LOCAL_SEED,
-  PRIVATE_STATE_ID,
-} from "../../utils/config.js";
-import { randomBytes } from "../../utils/crypto.js";
-import { createQuotePrivateState } from "../../utils/witnesses.js";
+  type QuoteProviders,
+} from "../../providers/buildProviders";
+import { MidnightWalletProvider } from "../../providers/walletProviders";
+import { getConfig, network, PRIVATE_STATE_ID } from "../../utils/config";
+import { randomBytes } from "../../utils/crypto";
+import { resolveSecret } from "../../utils/resolveSecret";
+import { syncWallet } from "../../utils/wallet";
+import { createQuotePrivateState } from "../../utils/witnesses";
 
 // Required for GraphQL subscriptions in Node.js
 // @ts-expect-error WebSocket global assignment for apollo
@@ -51,42 +43,9 @@ const logger = pino({
   transport: { target: "pino-pretty" },
 });
 
-const network = process.env["MIDNIGHT_NETWORK"] ?? "local";
-
-function resolveSecret(net: string): WalletSecret {
-  if (net === "local") return { kind: "seed", value: OWNER_LOCAL_SEED };
-
-  const upper = net.toUpperCase();
-  const mnemonicEnv = `MIDNIGHT_${upper}_MNEMONIC`;
-  const seedEnv = `MIDNIGHT_${upper}_SEED`;
-  const mnemonic = process.env[mnemonicEnv]?.trim().replace(/\s+/g, " ");
-  const seedHex = process.env[seedEnv]?.trim();
-
-  if (mnemonic && seedHex) {
-    throw new Error(
-      `Set only one of ${mnemonicEnv} or ${seedEnv} (both are defined).`,
-    );
-  }
-  if (mnemonic) {
-    return { kind: "mnemonic", value: mnemonic };
-  }
-  if (seedHex) {
-    if (!/^[0-9a-fA-F]+$/.test(seedHex) || seedHex.length % 2 !== 0) {
-      throw new Error(
-        `${seedEnv} must be a hex string of even length (no 0x prefix).`,
-      );
-    }
-    return { kind: "seed", value: seedHex };
-  }
-  throw new Error(
-    `Either ${mnemonicEnv} or ${seedEnv} is required for network '${net}'. ` +
-      `Set one in .env.${net} or the shell.`,
-  );
-}
-
 describe(`Quote of The Day Contract (${network})`, () => {
   let wallet: MidnightWalletProvider;
-  let providers: QuoteOfTheDayProviders;
+  let providers: QuoteProviders;
   let contractAddress: ContractAddress;
 
   const config = getConfig();
@@ -97,7 +56,7 @@ describe(`Quote of The Day Contract (${network})`, () => {
       (isRemote ? 60 * 60_000 : 10 * 60_000),
   );
 
-  async function queryLedger(p: QuoteOfTheDayProviders) {
+  async function queryLedger(p: QuoteProviders) {
     const state =
       await p.publicDataProvider.queryContractState(contractAddress);
     expect(state).not.toBeNull();

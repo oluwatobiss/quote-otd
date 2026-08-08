@@ -9,11 +9,11 @@ import { createQuotePrivateState } from "../utils/witnesses";
 export async function joinQuoteContract(
   providers: MidnightProviders<any>,
   contractAddress: string,
-  creatorIdentity: CreatorIdentity | null,
+  creatorId: CreatorIdentity | null,
 ) {
   // Create an initial state wrapper just for the join
-  const initialPrivateState = creatorIdentity
-    ? createQuotePrivateState(new Uint8Array(creatorIdentity.secretKey))
+  const initialPrivateState = creatorId
+    ? createQuotePrivateState(new Uint8Array(creatorId.secretKey))
     : createQuotePrivateState(new Uint8Array(32));
 
   const deployedContract = await findDeployedContract(providers, {
