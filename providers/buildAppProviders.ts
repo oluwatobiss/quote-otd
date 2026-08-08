@@ -3,10 +3,12 @@ import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-conf
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import type { MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
+import type {
+  MidnightProviders,
+  PrivateStateProvider,
+} from "@midnight-ntwrk/midnight-js-types";
 import { inMemoryPrivateStateProvider } from "./inMemoryPrivateStateProvider";
-import { MemoryPrivateStateProvider } from "./memoryPrivateStateProvider";
-import { getConfig } from "../utils/config";
+import { getConfig, PRIVATE_STATE_ID } from "../utils/config";
 import type {
   CreatorIdentity,
   QuoteOfTheDayCircuits,
@@ -21,14 +23,21 @@ export async function buildAppProviders(
   creatorId?: CreatorIdentity | null,
 ): Promise<{
   providers: MidnightProviders<any>;
-  stateProvider?: MemoryPrivateStateProvider;
+  stateProvider?: PrivateStateProvider<string, QuotePrivateState>;
 }> {
-  function createPrivateState(creatorId: CreatorIdentity) {
-    return createQuotePrivateState(new Uint8Array(creatorId.secretKey));
+  const createPrivateState = (creatorId: CreatorIdentity) =>
+    createQuotePrivateState(new Uint8Array(creatorId.secretKey));
+
+  const privateStateProvider = inMemoryPrivateStateProvider<
+    string,
+    QuotePrivateState
+  >();
+
+  if (creatorId) {
+    privateStateProvider.setContractAddress(creatorId.contractAddress);
+    privateStateProvider.set(PRIVATE_STATE_ID, createPrivateState(creatorId));
   }
 
-  const privateStateProvider =
-    creatorId && new MemoryPrivateStateProvider(createPrivateState(creatorId));
   // Dummy wallet for read-only
   const dummyWallet: any = {
     balanceTx: async () => {
@@ -54,9 +63,7 @@ export async function buildAppProviders(
   setNetworkId(config.networkId);
   return {
     providers: {
-      privateStateProvider: creatorId
-        ? (privateStateProvider as any)
-        : inMemoryPrivateStateProvider<string, QuotePrivateState>(),
+      privateStateProvider: privateStateProvider as any,
       publicDataProvider: indexerPublicDataProvider(
         walletConfig ? walletConfig.indexerUri : config.indexer,
         walletConfig ? walletConfig.indexerWsUri : config.indexerWS,
