@@ -9,7 +9,7 @@ import type { QuoteOfTheDayCircuits } from "../utils/quote.types";
 
 export type QuoteProviders = MidnightProviders<any>;
 
-export function buildProviders(
+export function buildNodeProviders(
   wallet: MidnightWalletProvider,
   zkConfigPath: string,
   config: NetworkConfig,

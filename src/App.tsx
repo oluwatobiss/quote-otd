@@ -22,7 +22,7 @@ import {
   DeployedQuoteService,
 } from "./quoteContractClient";
 import { ledger } from "../contracts/managed/quote-otd/contract/index";
-import { buildAppProviders } from "../providers/buildAppProviders";
+import { buildBrowserProviders } from "../providers/buildBrowserProviders";
 import type { CreatorIdentity } from "../utils/quote.types";
 import { connectBrowserWallet, listWallets } from "../utils/wallet";
 // @ts-ignore - allow side-effect CSS import without type declarations
@@ -75,7 +75,7 @@ function App() {
     if (wallet && identity && !deployedQuoteService) {
       const init = async () => {
         try {
-          const { providers } = await buildAppProviders(wallet, identity);
+          const { providers } = await buildBrowserProviders(wallet, identity);
           const contract = await joinQuoteContract(
             providers,
             identity.contractAddress,
@@ -97,7 +97,7 @@ function App() {
     try {
       setIsLoadingPublicState(true);
       setIsInvalidContract(false);
-      const { providers } = await buildAppProviders();
+      const { providers } = await buildBrowserProviders();
       const contract = await joinQuoteContract(providers, address, null);
 
       providers.publicDataProvider

@@ -15,9 +15,9 @@ import {
 import { QuoteSimulator } from "./quote-simulator";
 import { CompiledQuoteContract, Contract, ledger } from "../../contracts/index";
 import {
-  buildProviders,
+  buildNodeProviders,
   type QuoteProviders,
-} from "../../providers/buildProviders";
+} from "../../providers/buildNodeProviders";
 import { MidnightWalletProvider } from "../../providers/walletProviders";
 import { getConfig, network, PRIVATE_STATE_ID } from "../../utils/config";
 import { randomBytes } from "../../utils/crypto";
@@ -92,7 +92,11 @@ describe(`Quote of The Day Contract (${network})`, () => {
       logger.info(`Wallet NIGHT balance on '${network}': ${nightBalance}`);
     }
 
-    providers = buildProviders(wallet, "contracts/managed/quote-otd", config);
+    providers = buildNodeProviders(
+      wallet,
+      "contracts/managed/quote-otd",
+      config,
+    );
     logger.info(`Providers initialized on '${network}'. Ready to test!`);
   });
 

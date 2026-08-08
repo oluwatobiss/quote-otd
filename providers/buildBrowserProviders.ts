@@ -18,7 +18,7 @@ import {
   type QuotePrivateState,
 } from "../utils/witnesses";
 
-export async function buildAppProviders(
+export async function buildBrowserProviders(
   wallet?: ConnectedAPI,
   creatorId?: CreatorIdentity | null,
 ): Promise<{

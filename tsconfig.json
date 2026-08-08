@@ -20,7 +20,7 @@
     "contract/**/*.ts",
     "scripts/**/*.ts",
     "utils/crypto.ts",
-    "providers/buildProviders.ts",
+    "providers/buildNodeProviders.ts",
     "providers/inMemoryPrivateStateProvider.ts",
     "utils/witnesses.ts",
     "utils/config.ts",

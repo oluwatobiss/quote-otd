@@ -12,9 +12,9 @@ import {
 import { getDeploymentInfo, saveDeploymentInfo } from "./deployment";
 import { CompiledQuoteContract, Contract } from "../contracts/index";
 import {
-  buildProviders,
+  buildNodeProviders,
   type QuoteProviders,
-} from "../providers/buildProviders";
+} from "../providers/buildNodeProviders";
 import { MidnightWalletProvider } from "../providers/walletProviders";
 import { getConfig, network, PRIVATE_STATE_ID } from "../utils/config";
 import { resolveSecret } from "../utils/resolveSecret";
@@ -80,7 +80,7 @@ async function main() {
     logger.info(`Wallet NIGHT balance on '${network}': ${nightBalance}`);
   }
 
-  providers = buildProviders(wallet, "contracts/managed/quote-otd", config);
+  providers = buildNodeProviders(wallet, "contracts/managed/quote-otd", config);
 
   const deployed: DeployedContract<Contract> = await deployContract<Contract>(
     providers,
