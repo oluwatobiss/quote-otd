@@ -40,13 +40,13 @@ export interface DeployedQuoteService {
   publish: (newQuote: string) => Promise<string>;
 }
 
-export class QuoteContractClient implements DeployedQuoteService {
+export class QuoteOTDClient implements DeployedQuoteService {
   static async build(
     deployedContract: DeployedQuoteContract,
     providers: QuoteProviders,
     logger?: Logger,
-  ): Promise<QuoteContractClient> {
-    return new QuoteContractClient(deployedContract, providers, logger);
+  ): Promise<QuoteOTDClient> {
+    return new QuoteOTDClient(deployedContract, providers, logger);
   }
 
   private constructor(

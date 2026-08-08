@@ -17,10 +17,7 @@ import {
 import { WalletCard } from "./components/WalletCard";
 import { WalletPicker } from "./components/WalletPicker";
 import { joinQuoteContract } from "./joinQuoteContract";
-import {
-  QuoteContractClient,
-  DeployedQuoteService,
-} from "./quoteContractClient";
+import { QuoteOTDClient, DeployedQuoteService } from "./quoteOTDClient";
 import { ledger } from "../contracts/managed/quote-otd/contract/index";
 import { buildBrowserProviders } from "../providers/buildBrowserProviders";
 import type { CreatorIdentity } from "../utils/quote.types";
@@ -82,7 +79,7 @@ function App() {
             identity,
           );
           setDeployedQuoteService(
-            await QuoteContractClient.build(contract, providers),
+            await QuoteOTDClient.build(contract, providers),
           );
         } catch (err: any) {
           console.error("Failed to initialize deployed quote service:", err);
