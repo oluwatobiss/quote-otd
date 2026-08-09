@@ -7,7 +7,6 @@ import { toHex } from "@midnight-ntwrk/midnight-js-utils";
 import { CreatorIdentitySelector } from "./components/CreatorIdentitySelector";
 import { CurrentQuoteCard } from "./components/CurrentQuoteCard";
 import { Header } from "./components/Header";
-import { OwnerCard } from "./components/OwnerCard";
 import { PublishQuoteCard } from "./components/PublishQuoteCard";
 import { SkeletonText } from "./components/Skeleton";
 import {
@@ -20,6 +19,7 @@ import { joinQuoteContract } from "./joinQuoteContract";
 import { QuoteOTDClient, DeployedQuoteService } from "./quoteOTDClient";
 import { ledger } from "../contracts/managed/quote-otd/contract/index";
 import { buildBrowserProviders } from "../providers/buildBrowserProviders";
+import { copyShareLink } from "../utils/copyShareLink";
 import type { CreatorIdentity } from "../utils/quote.types";
 import { connectBrowserWallet, listWallets } from "../utils/wallet";
 // @ts-ignore - allow side-effect CSS import without type declarations
@@ -44,7 +44,6 @@ function App() {
   const [ownerPublicKey, setOwnerPublicKey] = useState<string | null>(null);
 
   const [txState, setTxState] = useState<TxState>("idle");
-  const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [deployedQuoteService, setDeployedQuoteService] =
@@ -165,7 +164,6 @@ function App() {
 
     try {
       setTxState("proving");
-      setTxHash(null);
       setErrorMessage(null);
 
       // Race the publish promise with a state update promise
@@ -180,26 +178,18 @@ function App() {
         });
       });
 
-      const hash = await Promise.race([
+      await Promise.race([
         deployedQuoteService.publish(newQuote),
         stateUpdatePromise,
       ]);
 
       setTxState("submitting");
-      setTxHash(hash);
       setTxState("success");
       setIdentity(null);
     } catch (err: any) {
       console.error("Publish failed:", err);
       setErrorMessage("Proof generation or transaction failed.");
       setTxState("error");
-    }
-  }
-
-  function copyShareLink() {
-    if (contractAddress) {
-      const url = `${window.location.origin}${window.location.pathname}?contract=${contractAddress}`;
-      navigator.clipboard.writeText(url);
     }
   }
 
@@ -253,7 +243,7 @@ function App() {
               </div>
               <div className="mt-8 mb-4">
                 <blockquote>
-                  "The best way to predict the future is to create it."
+                  The best way to predict the future is to create it.
                 </blockquote>
                 <p className="mt-6 text-xs opacity-50 text-center">
                   This is a sample quote demonstrating how shared quotes are
@@ -370,7 +360,7 @@ function App() {
                     Contract Data
                   </span>
                   <button
-                    onClick={copyShareLink}
+                    onClick={() => copyShareLink(contractAddress)}
                     className="btn btn-sm flex gap-2"
                   >
                     <span>🔗</span> Copy Share Link
@@ -399,7 +389,7 @@ function App() {
 
             <TransactionStatusCard
               txState={txState}
-              txHash={txHash}
+              contractAddress={contractAddress}
               errorMessage={errorMessage}
             />
           </div>
