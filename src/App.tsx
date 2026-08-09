@@ -228,6 +228,15 @@ function App() {
     }
   }
 
+  function handleGoHome() {
+    setContractAddress(null);
+    window.history.pushState(
+      { path: window.location.pathname },
+      "",
+      window.location.pathname,
+    );
+  }
+
   const isCreatorView = !!walletAddress || !!identity;
 
   return (
@@ -310,18 +319,10 @@ function App() {
 
         {/* Reader View */}
         {contractAddress && !isCreatorView && !isInvalidContract && (
-          <div className="animate-fade-in-up flex-col gap-6">
-            <div className="flex justify-between items-center">
-              <span className="text-xs opacity-50 uppercase tracking-wide">
-                Viewing Quote
-              </span>
-              <button
-                onClick={handleOpenWalletPicker}
-                className="btn btn-sm btn-ghost"
-              >
-                I am the Creator
-              </button>
-            </div>
+          <div className="animate-fade-in-up flex-col">
+            <button onClick={handleGoHome} className="nav-link">
+              &larr; Back to Home
+            </button>
 
             {isLoadingPublicState ? (
               <div className="flex-col gap-6">
@@ -336,10 +337,7 @@ function App() {
                 </div>
               </div>
             ) : (
-              <>
-                <OwnerCard ownerPublicKey={ownerPublicKey} isOwner={false} />
-                <CurrentQuoteCard quote={quote} />
-              </>
+              <CurrentQuoteCard quote={quote} />
             )}
           </div>
         )}
