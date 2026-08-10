@@ -26,7 +26,7 @@
     "build:start": "npm run build && npm run start",
     "build:start:preview": "npm run build:preview && npm run start",
     "ci": "npm run typecheck && npm run lint",
-    "lint": "eslint .",
+    "lint": "eslint src",
     "start": "http-server --port 0 ./dist",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "preview": "vite preview",

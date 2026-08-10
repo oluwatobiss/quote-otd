@@ -22,7 +22,7 @@ import { buildBrowserProviders } from "../providers/buildBrowserProviders";
 import { copyShareLink } from "../utils/copyShareLink";
 import type { CreatorIdentity } from "../utils/quote.types";
 import { connectBrowserWallet, listWallets } from "../utils/wallet";
-// @ts-ignore - allow side-effect CSS import without type declarations
+// @ts-expect-error - allow side-effect CSS import without type declarations
 import "./App.css";
 
 function App() {
