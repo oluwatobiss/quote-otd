@@ -64,7 +64,7 @@ jspm_packages/
 *.sw?
 
 # Compact
-#managed/
+managed/
 
 # AI assistant local configuration
 .agent/
