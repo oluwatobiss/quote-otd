@@ -39,13 +39,20 @@ function getIsInvalidContract(): boolean {
   return !!param && param.length <= 10;
 }
 
+// True on mount if a valid contract address is in the URL and needs to be fetched.
+function getInitialLoadingState(): boolean {
+  return getInitialContractAddress() !== null;
+}
+
 function App() {
   const [contractAddress, setContractAddress] = useState<string | null>(
     getInitialContractAddress,
   );
   const [isInvalidContract, setIsInvalidContract] =
     useState<boolean>(getIsInvalidContract);
-  const [isLoadingPublicState, setIsLoadingPublicState] = useState(false);
+  const [isLoadingPublicState, setIsLoadingPublicState] = useState<boolean>(
+    getInitialLoadingState,
+  );
 
   const [wallet, setWallet] = useState<ConnectedAPI | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -91,8 +98,6 @@ function App() {
 
   async function loadPublicState(address: string) {
     try {
-      setIsLoadingPublicState(true);
-      setIsInvalidContract(false);
       const { providers } = await buildBrowserProviders();
       const contract = await joinQuoteContract(providers, address, null);
 
@@ -141,6 +146,8 @@ function App() {
       setContractAddress(selectedIdentity.contractAddress);
       const newUrl = `${window.location.pathname}?contract=${selectedIdentity.contractAddress}`;
       window.history.pushState({ path: newUrl }, "", newUrl);
+      setIsLoadingPublicState(true);
+      setIsInvalidContract(false);
       await loadPublicState(selectedIdentity.contractAddress);
     }
   }
@@ -200,6 +207,8 @@ function App() {
       setContractAddress(targetContract);
       const newUrl = `${window.location.pathname}?contract=${targetContract}`;
       window.history.pushState({ path: newUrl }, "", newUrl);
+      setIsLoadingPublicState(true);
+      setIsInvalidContract(false);
       loadPublicState(targetContract);
     }
   }
@@ -219,7 +228,12 @@ function App() {
   // initializer because loadPublicState is an async side effect.
   useEffect(() => {
     const address = getInitialContractAddress();
-    if (address) loadPublicState(address);
+    if (!address) return;
+    // loadPublicState is async — every setState it calls happens after an
+    // await or inside a subscription callback, never synchronously.
+    // The rule cannot track async boundaries, so we suppress it here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadPublicState(address);
   }, []);
 
   // Initialize proving client when both wallet and identity are available
