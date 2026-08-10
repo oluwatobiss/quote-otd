@@ -43,7 +43,7 @@
   ],
   "witnesses": [
     {
-      "name": "localSecretKey",
+      "name": "creatorIdentity",
       "arguments": [
       ],
       "result type": {

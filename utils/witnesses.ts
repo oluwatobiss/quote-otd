@@ -10,7 +10,7 @@ export const createQuotePrivateState = (secretKey: Uint8Array) => ({
 });
 
 export const witnesses = {
-  localSecretKey: ({
+  creatorIdentity: ({
     privateState,
   }: WitnessContext<Ledger, QuotePrivateState>): [
     QuotePrivateState,

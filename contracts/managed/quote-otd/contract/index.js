@@ -59,8 +59,8 @@ export class Contract {
     if (typeof(witnesses_0) !== 'object') {
       throw new __compactRuntime.CompactError('first (witnesses) argument to Contract constructor is not an object');
     }
-    if (typeof(witnesses_0.localSecretKey) !== 'function') {
-      throw new __compactRuntime.CompactError('first (witnesses) argument to Contract constructor does not contain a function-valued field named localSecretKey');
+    if (typeof(witnesses_0.creatorIdentity) !== 'function') {
+      throw new __compactRuntime.CompactError('first (witnesses) argument to Contract constructor does not contain a function-valued field named creatorIdentity');
     }
     this.witnesses = witnesses_0;
     this.circuits = {
@@ -148,8 +148,8 @@ export class Contract {
                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_1.toValue(''),
                                                                                               alignment: _descriptor_1.alignment() }).encode() } },
                                        { ins: { cached: false, n: 1 } }]);
-    const tmp_0 = this._publicKey_0(this._localSecretKey_0(context,
-                                                           partialProofData));
+    const tmp_0 = this._publicKey_0(this._creatorIdentity_0(context,
+                                                            partialProofData));
     __compactRuntime.queryLedgerState(context,
                                       partialProofData,
                                       [
@@ -171,12 +171,12 @@ export class Contract {
     const result_0 = __compactRuntime.persistentHash(_descriptor_2, value_0);
     return result_0;
   }
-  _localSecretKey_0(context, partialProofData) {
+  _creatorIdentity_0(context, partialProofData) {
     const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.currentQueryContext.state), context.currentPrivateState, context.currentQueryContext.address);
-    const [nextPrivateState_0, result_0] = this.witnesses.localSecretKey(witnessContext_0);
+    const [nextPrivateState_0, result_0] = this.witnesses.creatorIdentity(witnessContext_0);
     context.currentPrivateState = nextPrivateState_0;
     if (!(result_0.buffer instanceof ArrayBuffer && result_0.BYTES_PER_ELEMENT === 1 && result_0.length === 32)) {
-      __compactRuntime.typeError('localSecretKey',
+      __compactRuntime.typeError('creatorIdentity',
                                  'return value',
                                  'quote-otd.compact line 10 char 1',
                                  'Bytes<32>',
@@ -201,8 +201,8 @@ export class Contract {
                                                                                                                                 alignment: _descriptor_8.alignment() } }] } },
                                                                                                      { popeq: { cached: false,
                                                                                                                 result: undefined } }]).value),
-                                          this._publicKey_0(this._localSecretKey_0(context,
-                                                                                   partialProofData))),
+                                          this._publicKey_0(this._creatorIdentity_0(context,
+                                                                                    partialProofData))),
                             'Attempted to post, but not the owner');
     __compactRuntime.queryLedgerState(context,
                                       partialProofData,
@@ -272,7 +272,9 @@ export function ledger(stateOrChargedState) {
 const _emptyContext = {
   currentQueryContext: new __compactRuntime.QueryContext(new __compactRuntime.ContractState().data, __compactRuntime.dummyContractAddress())
 };
-const _dummyContract = new Contract({ localSecretKey: (...args) => undefined });
+const _dummyContract = new Contract({
+  creatorIdentity: (...args) => undefined
+});
 export const pureCircuits = {
   publicKey: (...args_0) => {
     if (args_0.length !== 1) {
