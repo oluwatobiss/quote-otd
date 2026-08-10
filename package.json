@@ -11,7 +11,7 @@
     "build:preview": "rm -rf ./dist && npm run compile && tsc && vite build --mode preview && cp -r contracts/managed/quote-otd/keys ./dist/keys && cp -r contracts/managed/quote-otd/zkir ./dist/zkir",
     "build:start": "npm run build && npm run start",
     "build:start:preview": "npm run build:preview && npm run start",
-    "ci": "npm run typecheck && npm run lint && npm run build:preview",
+    "ci": "npm run lint && npm run build:preview",
     "compile": "compact compile contracts/quote-otd.compact contracts/managed/quote-otd",
     "deploy": "vite-node scripts/deploy.ts",
     "deploy:preprod": "MIDNIGHT_NETWORK=preprod npm run deploy",
