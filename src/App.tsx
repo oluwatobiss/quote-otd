@@ -68,36 +68,26 @@ function App() {
 
   const [sharedLinkInput, setSharedLinkInput] = useState("");
 
-  // If a contract address was present in the URL on initial load, fetch its
-  // public state once on mount. We do this in an effect rather than the lazy
-  // initializer because loadPublicState is an async side effect.
-  useEffect(() => {
-    const address = getInitialContractAddress();
-    if (address) loadPublicState(address);
-  }, []);
+  const isCreatorView = !!walletAddress || !!identity;
 
-  // Initialize proving client when both wallet and identity are available
-  useEffect(() => {
-    if (wallet && identity && !deployedQuoteService) {
-      const init = async () => {
-        try {
-          const { providers } = await buildBrowserProviders(wallet, identity);
-          const contract = await joinQuoteContract(
-            providers,
-            identity.contractAddress,
-            identity,
-          );
-          setDeployedQuoteService(
-            await QuoteOTDClient.build(contract, providers),
-          );
-        } catch (err: any) {
-          console.error("Failed to initialize deployed quote service:", err);
-          setErrorMessage("Failed to initialize deployed quote service.");
-        }
-      };
-      init();
-    }
-  }, [wallet, identity, deployedQuoteService]);
+  function openWalletPicker() {
+    const wallets = listWallets();
+    setAvailableWallets(wallets);
+    setIsWalletPickerOpen(true);
+  }
+
+  function disconnectWallet() {
+    setWallet(null);
+    setWalletAddress(null);
+    setDeployedQuoteService(null);
+    setIdentity(null);
+    setTxState("idle");
+  }
+
+  function clearIdentity() {
+    setIdentity(null);
+    setOwnerPublicKey(null);
+  }
 
   async function loadPublicState(address: string) {
     try {
@@ -123,13 +113,7 @@ function App() {
     }
   }
 
-  function handleOpenWalletPicker() {
-    const wallets = listWallets();
-    setAvailableWallets(wallets);
-    setIsWalletPickerOpen(true);
-  }
-
-  async function handleConnect(selectedWallet: InitialAPI) {
+  async function connectWallet(selectedWallet: InitialAPI) {
     try {
       setIsWalletPickerOpen(false);
       setIsConnecting(true);
@@ -150,20 +134,7 @@ function App() {
     }
   }
 
-  function handleDisconnect() {
-    setWallet(null);
-    setWalletAddress(null);
-    setDeployedQuoteService(null);
-    setIdentity(null);
-    setTxState("idle");
-  }
-
-  function clearIdentity() {
-    setIdentity(null);
-    setOwnerPublicKey(null);
-  }
-
-  async function handleIdentityLoaded(loadedIdentity: CreatorIdentity) {
+  async function applyCreatorIdentity(loadedIdentity: CreatorIdentity) {
     setIdentity(loadedIdentity);
 
     if (contractAddress !== loadedIdentity.contractAddress) {
@@ -174,7 +145,7 @@ function App() {
     }
   }
 
-  async function handlePublish(newQuote: string) {
+  async function publishQuote(newQuote: string) {
     if (!deployedQuoteService || !wallet || !identity) return;
 
     try {
@@ -208,7 +179,7 @@ function App() {
     }
   }
 
-  function handleOpenSharedLink(e: React.SubmitEvent) {
+  function openSharedLink(e: React.SubmitEvent) {
     e.preventDefault();
     if (!sharedLinkInput) return;
 
@@ -233,7 +204,7 @@ function App() {
     }
   }
 
-  function handleGoHome() {
+  function goHome() {
     setContractAddress(null);
     setOwnerPublicKey(null);
     window.history.pushState(
@@ -243,7 +214,36 @@ function App() {
     );
   }
 
-  const isCreatorView = !!walletAddress || !!identity;
+  // If a contract address was present in the URL on initial load, fetch its
+  // public state once on mount. We do this in an effect rather than the lazy
+  // initializer because loadPublicState is an async side effect.
+  useEffect(() => {
+    const address = getInitialContractAddress();
+    if (address) loadPublicState(address);
+  }, []);
+
+  // Initialize proving client when both wallet and identity are available
+  useEffect(() => {
+    if (wallet && identity && !deployedQuoteService) {
+      const init = async () => {
+        try {
+          const { providers } = await buildBrowserProviders(wallet, identity);
+          const contract = await joinQuoteContract(
+            providers,
+            identity.contractAddress,
+            identity,
+          );
+          setDeployedQuoteService(
+            await QuoteOTDClient.build(contract, providers),
+          );
+        } catch (err: any) {
+          console.error("Failed to initialize deployed quote service:", err);
+          setErrorMessage("Failed to initialize deployed quote service.");
+        }
+      };
+      init();
+    }
+  }, [wallet, identity, deployedQuoteService]);
 
   return (
     <div className="container mx-auto max-w-3xl flex-col min-h-screen">
@@ -276,7 +276,7 @@ function App() {
                   Midnight.
                 </p>
                 <button
-                  onClick={handleOpenWalletPicker}
+                  onClick={openWalletPicker}
                   className="btn btn-primary w-full"
                 >
                   Connect Wallet
@@ -289,10 +289,7 @@ function App() {
                   View any shared quote without connecting a wallet. Paste the
                   link here or visit it directly.
                 </p>
-                <form
-                  onSubmit={handleOpenSharedLink}
-                  className="flex gap-2 w-full"
-                >
+                <form onSubmit={openSharedLink} className="flex gap-2 w-full">
                   <input
                     type="text"
                     className="input"
@@ -326,7 +323,7 @@ function App() {
         {/* Reader View */}
         {contractAddress && !isCreatorView && !isInvalidContract && (
           <div className="animate-fade-in-up flex-col">
-            <button onClick={handleGoHome} className="nav-link">
+            <button onClick={goHome} className="nav-link">
               &larr; Back to Home
             </button>
 
@@ -354,15 +351,15 @@ function App() {
             <div className="grid md:grid-cols-2">
               <WalletCard
                 walletAddress={walletAddress}
-                onConnect={handleOpenWalletPicker}
-                onDisconnect={handleDisconnect}
+                onConnect={openWalletPicker}
+                onDisconnect={disconnectWallet}
                 isConnecting={isConnecting}
               />
 
               {walletAddress && (
                 <CreatorIdentitySelector
                   identity={identity}
-                  onIdentityLoaded={handleIdentityLoaded}
+                  onIdentityLoaded={applyCreatorIdentity}
                   onClear={clearIdentity}
                   expectedOwnerPublicKey={ownerPublicKey}
                 />
@@ -386,7 +383,7 @@ function App() {
                 <CurrentQuoteCard quote={quote} />
 
                 <PublishQuoteCard
-                  onPublish={handlePublish}
+                  onPublish={publishQuote}
                   isDisabled={
                     !deployedQuoteService ||
                     txState === "proving" ||
@@ -419,7 +416,7 @@ function App() {
       <WalletPicker
         isOpen={isWalletPickerOpen}
         wallets={availableWallets}
-        onSelect={handleConnect}
+        onSelect={connectWallet}
         onClose={() => setIsWalletPickerOpen(false)}
       />
     </div>
