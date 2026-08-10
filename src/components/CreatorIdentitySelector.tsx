@@ -2,14 +2,14 @@ import { useState } from "react";
 import type { CreatorIdentity } from "../../utils/quote.types";
 
 interface CreatorIdentitySelectorProps {
-  onIdentityLoaded: (identity: CreatorIdentity) => void;
+  onIdentitySelected: (identity: CreatorIdentity) => void;
   onClear: () => void;
   identity: CreatorIdentity | null;
   expectedOwnerPublicKey: string | null;
 }
 
 export function CreatorIdentitySelector({
-  onIdentityLoaded,
+  onIdentitySelected,
   onClear,
   identity,
   expectedOwnerPublicKey,
@@ -45,7 +45,7 @@ export function CreatorIdentitySelector({
           );
         }
 
-        onIdentityLoaded(parsed);
+        onIdentitySelected(parsed);
       } catch (err: any) {
         setError(err.message || "Failed to parse identity file.");
       }
@@ -66,7 +66,7 @@ export function CreatorIdentitySelector({
             className="badge badge-success-outline"
             style={{ alignSelf: "flex-start" }}
           >
-            Identity Loaded
+            Identity Selected
           </div>
           <p className="text-sm opacity-70">
             <strong>

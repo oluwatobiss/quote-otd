@@ -134,14 +134,14 @@ function App() {
     }
   }
 
-  async function applyCreatorIdentity(loadedIdentity: CreatorIdentity) {
-    setIdentity(loadedIdentity);
+  async function applyCreatorIdentity(selectedIdentity: CreatorIdentity) {
+    setIdentity(selectedIdentity);
 
-    if (contractAddress !== loadedIdentity.contractAddress) {
-      setContractAddress(loadedIdentity.contractAddress);
-      const newUrl = `${window.location.pathname}?contract=${loadedIdentity.contractAddress}`;
+    if (contractAddress !== selectedIdentity.contractAddress) {
+      setContractAddress(selectedIdentity.contractAddress);
+      const newUrl = `${window.location.pathname}?contract=${selectedIdentity.contractAddress}`;
       window.history.pushState({ path: newUrl }, "", newUrl);
-      await loadPublicState(loadedIdentity.contractAddress);
+      await loadPublicState(selectedIdentity.contractAddress);
     }
   }
 
@@ -359,7 +359,7 @@ function App() {
               {walletAddress && (
                 <CreatorIdentitySelector
                   identity={identity}
-                  onIdentityLoaded={applyCreatorIdentity}
+                  onIdentitySelected={applyCreatorIdentity}
                   onClear={clearIdentity}
                   expectedOwnerPublicKey={ownerPublicKey}
                 />
