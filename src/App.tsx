@@ -25,9 +25,26 @@ import { connectBrowserWallet, listWallets } from "../utils/wallet";
 // @ts-expect-error - allow side-effect CSS import without type declarations
 import "./App.css";
 
+function getContractParam(): string | null {
+  return new URLSearchParams(window.location.search).get("contract");
+}
+
+function getInitialContractAddress(): string | null {
+  const param = getContractParam();
+  return param && param.length > 10 ? param : null;
+}
+
+function getIsInvalidContract(): boolean {
+  const param = getContractParam();
+  return !!param && param.length <= 10;
+}
+
 function App() {
-  const [contractAddress, setContractAddress] = useState<string | null>(null);
-  const [isInvalidContract, setIsInvalidContract] = useState(false);
+  const [contractAddress, setContractAddress] = useState<string | null>(
+    getInitialContractAddress,
+  );
+  const [isInvalidContract, setIsInvalidContract] =
+    useState<boolean>(getIsInvalidContract);
   const [isLoadingPublicState, setIsLoadingPublicState] = useState(false);
 
   const [wallet, setWallet] = useState<ConnectedAPI | null>(null);
@@ -51,19 +68,12 @@ function App() {
 
   const [sharedLinkInput, setSharedLinkInput] = useState("");
 
-  // Parse URL for contract address on mount
+  // If a contract address was present in the URL on initial load, fetch its
+  // public state once on mount. We do this in an effect rather than the lazy
+  // initializer because loadPublicState is an async side effect.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const contractParam = params.get("contract");
-
-    if (contractParam) {
-      if (contractParam.length > 10) {
-        setContractAddress(contractParam);
-        loadPublicState(contractParam);
-      } else {
-        setIsInvalidContract(true);
-      }
-    }
+    const address = getInitialContractAddress();
+    if (address) loadPublicState(address);
   }, []);
 
   // Initialize proving client when both wallet and identity are available
