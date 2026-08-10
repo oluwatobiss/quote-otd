@@ -1,6 +1,7 @@
 # Quote of the Day
 
 [![Built on Midnight](https://img.shields.io/badge/Built_on-Midnight-000000?style=for-the-badge)](https://midnight.network/)
+[![CI](https://github.com/oluwatobiss/quote-otd/actions/workflows/ci.yaml/badge.svg)](https://github.com/oluwatobiss/quote-otd/actions/workflows/ci.yaml)
 
 A Midnight smart contract that lets the owner post a quote for the day which anyone can view.
 
