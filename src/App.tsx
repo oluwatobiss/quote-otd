@@ -148,6 +148,11 @@ function App() {
     setTxState("idle");
   }
 
+  function clearIdentity() {
+    setIdentity(null);
+    setOwnerPublicKey(null);
+  }
+
   async function handleIdentityLoaded(loadedIdentity: CreatorIdentity) {
     setIdentity(loadedIdentity);
 
@@ -185,7 +190,7 @@ function App() {
 
       setTxState("submitting");
       setTxState("success");
-      setIdentity(null);
+      clearIdentity();
     } catch (err: any) {
       console.error("Publish failed:", err);
       setErrorMessage("Proof generation or transaction failed.");
@@ -220,6 +225,7 @@ function App() {
 
   function handleGoHome() {
     setContractAddress(null);
+    setOwnerPublicKey(null);
     window.history.pushState(
       { path: window.location.pathname },
       "",
@@ -347,7 +353,7 @@ function App() {
                 <CreatorIdentitySelector
                   identity={identity}
                   onIdentityLoaded={handleIdentityLoaded}
-                  onClear={() => setIdentity(null)}
+                  onClear={clearIdentity}
                   expectedOwnerPublicKey={ownerPublicKey}
                 />
               )}
