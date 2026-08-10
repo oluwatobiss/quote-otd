@@ -7,8 +7,8 @@
     "node": ">=24.11.1"
   },
   "scripts": {
-    "build": "rm -rf ./dist && tsc && vite build --mode preprod && cp -r contracts/managed/quote-otd/keys ./dist/keys && cp -r contracts/managed/quote-otd/zkir ./dist/zkir",
-    "build:preview": "rm -rf ./dist && tsc && vite build --mode preview && cp -r contracts/managed/quote-otd/keys ./dist/keys && cp -r contracts/managed/quote-otd/zkir ./dist/zkir",
+    "build": "rm -rf ./dist && npm run compile && tsc && vite build --mode preprod && cp -r contracts/managed/quote-otd/keys ./dist/keys && cp -r contracts/managed/quote-otd/zkir ./dist/zkir",
+    "build:preview": "rm -rf ./dist && npm run compile && tsc && vite build --mode preview && cp -r contracts/managed/quote-otd/keys ./dist/keys && cp -r contracts/managed/quote-otd/zkir ./dist/zkir",
     "build:start": "npm run build && npm run start",
     "build:start:preview": "npm run build:preview && npm run start",
     "ci": "npm run compile && npm run typecheck && npm run lint && npm run build:preview",
