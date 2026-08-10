@@ -1,0 +1,12 @@
+[build]
+  command = """
+    curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh &&
+    export PATH="$HOME/.compact/bin:$PATH" &&
+    compact update 0.31.0 &&
+    compact compile --version &&
+    npm run build:preview
+  """
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"

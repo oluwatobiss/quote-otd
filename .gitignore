@@ -75,3 +75,5 @@ tome.json
 
 # Generated deployment artifacts
 .midnight/
+# Local Netlify folder
+.netlify
