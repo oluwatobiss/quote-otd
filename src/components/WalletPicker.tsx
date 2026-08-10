@@ -67,7 +67,7 @@ export function WalletPicker({
                 )}
                 <div className="flex-col" style={{ alignItems: "flex-start" }}>
                   <span className="wallet-name">{wallet.name}</span>
-                  <span className="text-xs opacity-50">Installed</span>
+                  <span className="wallet-caption">Installed</span>
                 </div>
               </button>
             ))}

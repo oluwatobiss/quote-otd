@@ -1,81 +1,49 @@
-import * as fs from "fs";
-import * as path from "path";
 import pino from "pino";
-import { getConfig } from "../src/config.js";
+import { loadEnv } from "vite";
 import {
   deployContract,
   type DeployedContract,
 } from "@midnight-ntwrk/midnight-js-contracts";
 import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import {
-  PRIVATE_STATE_ID,
-  ensureDeploymentInfo,
-  ownerSecret,
-  saveDeploymentInfo,
-} from "./deployment.js";
-import { CompiledQuoteOfTheDayContract, Contract } from "../contracts/index.js";
-import {
-  buildProviders,
-  type QuoteOfTheDayProviders,
-} from "../src/providers.js";
-import {
-  type EnvironmentConfiguration,
   waitForFunds,
+  type EnvironmentConfiguration,
 } from "@midnight-ntwrk/testkit-js";
+import { getDeploymentInfo, saveDeploymentInfo } from "./deployment";
+import { CompiledQuoteContract, Contract } from "../contracts/index";
 import {
-  MidnightWalletProvider,
-  syncWallet,
-  type WalletSecret,
-} from "../src/wallet.js";
-import { createQuoteOTDPrivateState } from "../src/witnesses.js";
+  buildNodeProviders,
+  type QuoteProviders,
+} from "../providers/buildNodeProviders";
+import { MidnightWalletProvider } from "../providers/walletProviders";
+import { getConfig, network, PRIVATE_STATE_ID } from "../utils/config";
+import { resolveSecret } from "../utils/resolveSecret";
+import { syncWallet } from "../utils/wallet";
+import { createQuotePrivateState } from "../utils/witnesses";
+
+// Load .env.<network> file into process.env before anything reads it.
+// Unlike vitest, vite-node does not auto-load .env files, so we do it manually.
+const isRemote = network !== "local";
+if (isRemote) {
+  const envFromFile = loadEnv(network, process.cwd(), "");
+  for (const [key, value] of Object.entries(envFromFile)) {
+    // Shell env takes priority: only set if not already defined
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
 
 async function main() {
   let wallet: MidnightWalletProvider;
-  let providers: QuoteOfTheDayProviders;
+  let providers: QuoteProviders;
 
-  const OWNER_LOCAL_SEED =
-    "0000000000000000000000000000000000000000000000000000000000000001";
   const logger = pino({
     level: process.env["LOG_LEVEL"] ?? "info",
     transport: { target: "pino-pretty" },
   });
-  const network = process.env.MIDNIGHT_NETWORK ?? "local";
 
-  function resolveSecret(net: string): WalletSecret {
-    if (net === "local") return { kind: "seed", value: OWNER_LOCAL_SEED };
-
-    const upper = net.toUpperCase();
-    const mnemonicEnv = `MIDNIGHT_${upper}_MNEMONIC`;
-    const seedEnv = `MIDNIGHT_${upper}_SEED`;
-    const mnemonic = process.env[mnemonicEnv]?.trim().replace(/\s+/g, " ");
-    const seedHex = process.env[seedEnv]?.trim();
-
-    if (mnemonic && seedHex) {
-      throw new Error(
-        `Set only one of ${mnemonicEnv} or ${seedEnv} (both are defined).`,
-      );
-    }
-    if (mnemonic) {
-      return { kind: "mnemonic", value: mnemonic };
-    }
-    if (seedHex) {
-      if (!/^[0-9a-fA-F]+$/.test(seedHex) || seedHex.length % 2 !== 0) {
-        throw new Error(
-          `${seedEnv} must be a hex string of even length (no 0x prefix).`,
-        );
-      }
-      return { kind: "seed", value: seedHex };
-    }
-    throw new Error(
-      `Either ${mnemonicEnv} or ${seedEnv} is required for network '${net}'. ` +
-        `Set one in .env.${net} or the shell.`,
-    );
-  }
-
-  const deploymentInfo = ensureDeploymentInfo(network);
   const config = getConfig();
+  const deploymentInfo = getDeploymentInfo(network);
   const secret = resolveSecret(network);
-  const isRemote = network !== "local";
   const syncTimeoutMs = Number(
     process.env["MIDNIGHT_SYNC_TIMEOUT_MS"] ??
       (isRemote ? 60 * 60_000 : 10 * 60_000),
@@ -112,47 +80,36 @@ async function main() {
     logger.info(`Wallet NIGHT balance on '${network}': ${nightBalance}`);
   }
 
-  providers = buildProviders(wallet, "contracts/managed/quote-otd", config);
+  providers = buildNodeProviders(wallet, "contracts/managed/quote-otd", config);
 
   const deployed: DeployedContract<Contract> = await deployContract<Contract>(
     providers,
     {
-      compiledContract: CompiledQuoteOfTheDayContract,
+      compiledContract: CompiledQuoteContract,
       privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState: createQuoteOTDPrivateState(
-        ownerSecret(deploymentInfo),
-      ),
+      initialPrivateState: createQuotePrivateState(deploymentInfo.secretKey),
     },
   );
 
   logger.info("✅ Contract deployed successfully!");
 
-  deploymentInfo.contractAddress = deployed.deployTxData.public.contractAddress;
-  saveDeploymentInfo(deploymentInfo);
-
+  const contractAddress = deployed.deployTxData.public.contractAddress;
   const ownerPublicKeyHex = "unknown";
-  const secretKeyArray = Array.from(ownerSecret(deploymentInfo));
-
-  const creatorIdentity = {
+  const creatorId = {
     version: 1,
-    contractAddress: deploymentInfo.contractAddress,
+    contractAddress,
+    network,
     ownerPublicKey: ownerPublicKeyHex,
-    secretKey: secretKeyArray,
+    secretKey: deploymentInfo.secretKey,
     createdAt: new Date().toISOString(),
   };
 
-  const identityPath = path.resolve(process.cwd(), "creator-identity.quoteotd");
-  fs.writeFileSync(
-    identityPath,
-    JSON.stringify(creatorIdentity, null, 2),
-    "utf-8",
-  );
+  saveDeploymentInfo(creatorId);
 
-  logger.info(`Contract Address: ${deploymentInfo.contractAddress}`);
-  logger.info(`Saved to: .midnight/deployment.json`);
-  logger.info(`Generated Creator Identity: creator-identity.quoteotd`);
+  logger.info(`Contract Address: ${contractAddress}`);
+  logger.info(`Generated Creator Identity: .midnight/creator-id.quoteotd`);
   logger.info(
-    `🚨 IMPORTANT: Store 'creator-identity.quoteotd' securely! It represents ownership of your contract and is required for publishing new quotes.`,
+    `🚨 IMPORTANT: Store 'creator-id.quoteotd' securely! It represents ownership of your contract and is required for publishing new quotes. Do not share it with anyone. Do not commit it to version control.`,
   );
   logger.info(
     "─── Deployment Complete! ───────────────────────────────────────",

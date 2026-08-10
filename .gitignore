@@ -64,7 +64,7 @@ jspm_packages/
 *.sw?
 
 # Compact
-#managed/
+managed/
 
 # AI assistant local configuration
 .agent/
@@ -75,4 +75,5 @@ tome.json
 
 # Generated deployment artifacts
 .midnight/
-creator-identity.quoteotd
+# Local Netlify folder
+.netlify

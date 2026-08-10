@@ -1,6 +1,7 @@
 # Quote of the Day
 
 [![Built on Midnight](https://img.shields.io/badge/Built_on-Midnight-000000?style=for-the-badge)](https://midnight.network/)
+[![CI](https://github.com/oluwatobiss/quote-otd/actions/workflows/ci.yaml/badge.svg)](https://github.com/oluwatobiss/quote-otd/actions/workflows/ci.yaml)
 
 A Midnight smart contract that lets the owner post a quote for the day which anyone can view.
 
@@ -26,9 +27,9 @@ This contract uses Midnight's Zero-Knowledge (ZK) capabilities to ensure securit
   - The `quoteOfTheDay`: The actual text payload.
   - The `owner`: The hashed public key of the contract owner.
 - **What is PRIVATE (private witness, never on-chain)**:
-  - The `localSecretKey`: The private key of the owner.
+  - The `creatorIdentity`: The private key of the owner.
 - **What the user PROVES without revealing**:
-  - The user proves they possess the secret key (`localSecretKey`) that corresponds to the public key stored on-chain. This authorization happens purely through a Zero-Knowledge proof, guaranteeing security without ever exposing the private key to the network or block explorers. This prove determines the contract's owner and ensures that only the owner can post or update the quote.
+  - The user proves they possess the secret key (`creatorIdentity`) that corresponds to the public key stored on-chain. This authorization happens purely through a Zero-Knowledge proof, guaranteeing security without ever exposing the private key to the network or block explorers. This prove determines the contract's owner and ensures that only the owner can post or update the quote.
 
 ## Tech Stack
 

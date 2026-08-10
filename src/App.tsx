@@ -1,38 +1,58 @@
 import { useState, useEffect } from "react";
-// @ts-ignore - allow side-effect CSS import without type declarations
-import "./App.css";
-import { Header } from "./components/Header";
-import { WalletCard } from "./components/WalletCard";
-import { CreatorIdentitySelector } from "./components/CreatorIdentitySelector";
-import { OwnerCard } from "./components/OwnerCard";
-import { CurrentQuoteCard } from "./components/CurrentQuoteCard";
-import { PublishQuoteCard } from "./components/PublishQuoteCard";
-import {
-  TransactionStatusCard,
-  type TxState,
-} from "./components/TransactionStatusCard";
-import { WalletPicker } from "./components/WalletPicker";
-import { SkeletonText } from "./components/Skeleton";
-import { ledger } from "../contracts/managed/quote-otd/contract/index.js";
-import { toHex } from "@midnight-ntwrk/midnight-js-utils";
 import type {
   ConnectedAPI,
   InitialAPI,
 } from "@midnight-ntwrk/dapp-connector-api";
+import { toHex } from "@midnight-ntwrk/midnight-js-utils";
+import { CreatorIdentitySelector } from "./components/CreatorIdentitySelector";
+import { CurrentQuoteCard } from "./components/CurrentQuoteCard";
+import { Header } from "./components/Header";
+import { PublishQuoteCard } from "./components/PublishQuoteCard";
+import { SkeletonText } from "./components/Skeleton";
 import {
-  buildAppProviders,
-  buildReadonlyProviders,
-  connectBrowserWallet,
-  joinQuoteOfTheDayContract,
-  MidnightProvingClient,
-  listWallets,
-  type CreatorIdentity,
-} from "./midnightUtils";
+  TransactionStatusCard,
+  type TxState,
+} from "./components/TransactionStatusCard";
+import { WalletCard } from "./components/WalletCard";
+import { WalletPicker } from "./components/WalletPicker";
+import { joinQuoteContract } from "./joinQuoteContract";
+import { QuoteOTDClient, DeployedQuoteService } from "./quoteOTDClient";
+import { ledger } from "../contracts/managed/quote-otd/contract/index";
+import { buildBrowserProviders } from "../providers/buildBrowserProviders";
+import { copyShareLink } from "../utils/copyShareLink";
+import type { CreatorIdentity } from "../utils/quote.types";
+import { connectBrowserWallet, listWallets } from "../utils/wallet";
+// @ts-expect-error - allow side-effect CSS import without type declarations
+import "./App.css";
+
+function getContractParam(): string | null {
+  return new URLSearchParams(window.location.search).get("contract");
+}
+
+function getInitialContractAddress(): string | null {
+  const param = getContractParam();
+  return param && param.length > 10 ? param : null;
+}
+
+function getIsInvalidContract(): boolean {
+  const param = getContractParam();
+  return !!param && param.length <= 10;
+}
+
+// True on mount if a valid contract address is in the URL and needs to be fetched.
+function getInitialLoadingState(): boolean {
+  return getInitialContractAddress() !== null;
+}
 
 function App() {
-  const [contractAddress, setContractAddress] = useState<string | null>(null);
-  const [isInvalidContract, setIsInvalidContract] = useState(false);
-  const [isLoadingPublicState, setIsLoadingPublicState] = useState(false);
+  const [contractAddress, setContractAddress] = useState<string | null>(
+    getInitialContractAddress,
+  );
+  const [isInvalidContract, setIsInvalidContract] =
+    useState<boolean>(getIsInvalidContract);
+  const [isLoadingPublicState, setIsLoadingPublicState] = useState<boolean>(
+    getInitialLoadingState,
+  );
 
   const [wallet, setWallet] = useState<ConnectedAPI | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -48,69 +68,44 @@ function App() {
   const [ownerPublicKey, setOwnerPublicKey] = useState<string | null>(null);
 
   const [txState, setTxState] = useState<TxState>("idle");
-  const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [provingClient, setProvingClient] =
-    useState<MidnightProvingClient | null>(null);
+  const [deployedQuoteService, setDeployedQuoteService] =
+    useState<DeployedQuoteService | null>(null);
 
   const [sharedLinkInput, setSharedLinkInput] = useState("");
 
-  // Parse URL for contract address on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const contractParam = params.get("contract");
+  const isCreatorView = !!walletAddress || !!identity;
 
-    if (contractParam) {
-      if (contractParam.length > 10) {
-        setContractAddress(contractParam);
-        loadPublicState(contractParam);
-      } else {
-        setIsInvalidContract(true);
-      }
-    }
-  }, []);
+  function openWalletPicker() {
+    const wallets = listWallets();
+    setAvailableWallets(wallets);
+    setIsWalletPickerOpen(true);
+  }
 
-  // Initialize proving client when both wallet and identity are available
-  useEffect(() => {
-    if (wallet && identity && !provingClient) {
-      const init = async () => {
-        try {
-          const { providers, stateProvider } = await buildAppProviders(
-            wallet,
-            identity,
-          );
-          const contract = await joinQuoteOfTheDayContract(
-            providers,
-            identity.contractAddress,
-            identity,
-          );
-          setProvingClient(new MidnightProvingClient(contract, stateProvider));
-        } catch (err: any) {
-          console.error("Failed to initialize proving client:", err);
-          setErrorMessage("Failed to initialize proving client.");
-        }
-      };
-      init();
-    }
-  }, [wallet, identity, provingClient]);
+  function disconnectWallet() {
+    setWallet(null);
+    setWalletAddress(null);
+    setDeployedQuoteService(null);
+    setIdentity(null);
+    setTxState("idle");
+  }
+
+  function clearIdentity() {
+    setIdentity(null);
+    setOwnerPublicKey(null);
+  }
 
   async function loadPublicState(address: string) {
     try {
-      setIsLoadingPublicState(true);
-      setIsInvalidContract(false);
-      const providers = buildReadonlyProviders();
-      const contract = await joinQuoteOfTheDayContract(
-        providers,
-        address,
-        null,
-      );
+      const { providers } = await buildBrowserProviders();
+      const contract = await joinQuoteContract(providers, address, null);
 
       providers.publicDataProvider
         .contractStateObservable(contract.deployTxData.public.contractAddress, {
           type: "latest",
         })
-        .subscribe((contractState: any) => {
+        .subscribe((contractState) => {
           const state = ledger(contractState.data);
           setQuote(state.quoteOfTheDay);
           setOwnerPublicKey(toHex(state.owner));
@@ -123,13 +118,7 @@ function App() {
     }
   }
 
-  function handleOpenWalletPicker() {
-    const wallets = listWallets();
-    setAvailableWallets(wallets);
-    setIsWalletPickerOpen(true);
-  }
-
-  async function handleConnect(selectedWallet: InitialAPI) {
+  async function connectWallet(selectedWallet: InitialAPI) {
     try {
       setIsWalletPickerOpen(false);
       setIsConnecting(true);
@@ -140,7 +129,7 @@ function App() {
       setWalletAddress(
         (await connectedWallet.getUnshieldedAddress()).unshieldedAddress,
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setErrorMessage(
         "Couldn't connect to your wallet. Please unlock it and try again.",
@@ -150,54 +139,54 @@ function App() {
     }
   }
 
-  function handleDisconnect() {
-    setWallet(null);
-    setWalletAddress(null);
-    setProvingClient(null);
-    setIdentity(null);
-    setTxState("idle");
-  }
+  async function applyCreatorIdentity(selectedIdentity: CreatorIdentity) {
+    setIdentity(selectedIdentity);
 
-  async function handleIdentityLoaded(loadedIdentity: CreatorIdentity) {
-    setIdentity(loadedIdentity);
-
-    if (contractAddress !== loadedIdentity.contractAddress) {
-      setContractAddress(loadedIdentity.contractAddress);
-      const newUrl = `${window.location.pathname}?contract=${loadedIdentity.contractAddress}`;
+    if (contractAddress !== selectedIdentity.contractAddress) {
+      setContractAddress(selectedIdentity.contractAddress);
+      const newUrl = `${window.location.pathname}?contract=${selectedIdentity.contractAddress}`;
       window.history.pushState({ path: newUrl }, "", newUrl);
-      await loadPublicState(loadedIdentity.contractAddress);
+      setIsLoadingPublicState(true);
+      setIsInvalidContract(false);
+      await loadPublicState(selectedIdentity.contractAddress);
     }
   }
 
-  async function handlePublish(newQuote: string) {
-    if (!provingClient || !wallet || !identity) return;
+  async function publishQuote(newQuote: string) {
+    if (!deployedQuoteService || !wallet || !identity) return;
 
     try {
       setTxState("proving");
-      setTxHash(null);
       setErrorMessage(null);
 
-      const hash = await provingClient.provePost(newQuote);
+      // Race the publish promise with a state update promise
+      // This ensures that if the wallet transaction completes and updates the ledger,
+      // but the local hash polling hangs, we still successfully complete the flow.
+      const stateUpdatePromise = new Promise<string>((resolve) => {
+        const sub = deployedQuoteService.state$.subscribe((state) => {
+          if (state.quoteOfTheDay === newQuote) {
+            sub.unsubscribe();
+            resolve("Unknown Hash (View on Explorer)");
+          }
+        });
+      });
+
+      await Promise.race([
+        deployedQuoteService.publish(newQuote),
+        stateUpdatePromise,
+      ]);
 
       setTxState("submitting");
-      setTxHash(hash);
       setTxState("success");
-      setIdentity(null);
-    } catch (err: any) {
+      clearIdentity();
+    } catch (err: unknown) {
       console.error("Publish failed:", err);
       setErrorMessage("Proof generation or transaction failed.");
       setTxState("error");
     }
   }
 
-  function copyShareLink() {
-    if (contractAddress) {
-      const url = `${window.location.origin}${window.location.pathname}?contract=${contractAddress}`;
-      navigator.clipboard.writeText(url);
-    }
-  }
-
-  function handleOpenSharedLink(e: React.SubmitEvent) {
+  function openSharedLink(e: React.SubmitEvent) {
     e.preventDefault();
     if (!sharedLinkInput) return;
 
@@ -210,7 +199,7 @@ function App() {
       if (param) {
         targetContract = param;
       }
-    } catch (e) {
+    } catch {
       // Not a valid URL, treat as direct contract ID if they pasted that instead
     }
 
@@ -218,11 +207,57 @@ function App() {
       setContractAddress(targetContract);
       const newUrl = `${window.location.pathname}?contract=${targetContract}`;
       window.history.pushState({ path: newUrl }, "", newUrl);
+      setIsLoadingPublicState(true);
+      setIsInvalidContract(false);
       loadPublicState(targetContract);
     }
   }
 
-  const isCreatorView = !!walletAddress || !!identity;
+  function goHome() {
+    setContractAddress(null);
+    setOwnerPublicKey(null);
+    window.history.pushState(
+      { path: window.location.pathname },
+      "",
+      window.location.pathname,
+    );
+  }
+
+  // If a contract address was present in the URL on initial load, fetch its
+  // public state once on mount. We do this in an effect rather than the lazy
+  // initializer because loadPublicState is an async side effect.
+  useEffect(() => {
+    const address = getInitialContractAddress();
+    if (!address) return;
+    // loadPublicState is async — every setState it calls happens after an
+    // await or inside a subscription callback, never synchronously.
+    // The rule cannot track async boundaries, so we suppress it here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadPublicState(address);
+  }, []);
+
+  // Initialize proving client when both wallet and identity are available
+  useEffect(() => {
+    if (wallet && identity && !deployedQuoteService) {
+      const init = async () => {
+        try {
+          const { providers } = await buildBrowserProviders(wallet, identity);
+          const contract = await joinQuoteContract(
+            providers,
+            identity.contractAddress,
+            identity,
+          );
+          setDeployedQuoteService(
+            await QuoteOTDClient.build(contract, providers),
+          );
+        } catch (err: unknown) {
+          console.error("Failed to initialize deployed quote service:", err);
+          setErrorMessage("Failed to initialize deployed quote service.");
+        }
+      };
+      init();
+    }
+  }, [wallet, identity, deployedQuoteService]);
 
   return (
     <div className="container mx-auto max-w-3xl flex-col min-h-screen">
@@ -238,7 +273,7 @@ function App() {
               </div>
               <div className="mt-8 mb-4">
                 <blockquote>
-                  "The best way to predict the future is to create it."
+                  The best way to predict the future is to create it.
                 </blockquote>
                 <p className="mt-6 text-xs opacity-50 text-center">
                   This is a sample quote demonstrating how shared quotes are
@@ -255,7 +290,7 @@ function App() {
                   Midnight.
                 </p>
                 <button
-                  onClick={handleOpenWalletPicker}
+                  onClick={openWalletPicker}
                   className="btn btn-primary w-full"
                 >
                   Connect Wallet
@@ -268,10 +303,7 @@ function App() {
                   View any shared quote without connecting a wallet. Paste the
                   link here or visit it directly.
                 </p>
-                <form
-                  onSubmit={handleOpenSharedLink}
-                  className="flex gap-2 w-full"
-                >
+                <form onSubmit={openSharedLink} className="flex gap-2 w-full">
                   <input
                     type="text"
                     className="input"
@@ -304,18 +336,10 @@ function App() {
 
         {/* Reader View */}
         {contractAddress && !isCreatorView && !isInvalidContract && (
-          <div className="animate-fade-in-up flex-col gap-6">
-            <div className="flex justify-between items-center">
-              <span className="text-xs opacity-50 uppercase tracking-wide">
-                Viewing Quote
-              </span>
-              <button
-                onClick={handleOpenWalletPicker}
-                className="btn btn-sm btn-ghost"
-              >
-                I am the Creator
-              </button>
-            </div>
+          <div className="animate-fade-in-up flex-col">
+            <button onClick={goHome} className="nav-link">
+              &larr; Back to Home
+            </button>
 
             {isLoadingPublicState ? (
               <div className="flex-col gap-6">
@@ -330,10 +354,7 @@ function App() {
                 </div>
               </div>
             ) : (
-              <>
-                <OwnerCard ownerPublicKey={ownerPublicKey} isOwner={false} />
-                <CurrentQuoteCard quote={quote} />
-              </>
+              <CurrentQuoteCard quote={quote} />
             )}
           </div>
         )}
@@ -344,16 +365,16 @@ function App() {
             <div className="grid md:grid-cols-2">
               <WalletCard
                 walletAddress={walletAddress}
-                onConnect={handleOpenWalletPicker}
-                onDisconnect={handleDisconnect}
+                onConnect={openWalletPicker}
+                onDisconnect={disconnectWallet}
                 isConnecting={isConnecting}
               />
 
               {walletAddress && (
                 <CreatorIdentitySelector
                   identity={identity}
-                  onIdentityLoaded={handleIdentityLoaded}
-                  onClear={() => setIdentity(null)}
+                  onIdentitySelected={applyCreatorIdentity}
+                  onClear={clearIdentity}
                   expectedOwnerPublicKey={ownerPublicKey}
                 />
               )}
@@ -366,7 +387,7 @@ function App() {
                     Contract Data
                   </span>
                   <button
-                    onClick={copyShareLink}
+                    onClick={() => copyShareLink(contractAddress)}
                     className="btn btn-sm flex gap-2"
                   >
                     <span>🔗</span> Copy Share Link
@@ -376,14 +397,14 @@ function App() {
                 <CurrentQuoteCard quote={quote} />
 
                 <PublishQuoteCard
-                  onPublish={handlePublish}
+                  onPublish={publishQuote}
                   isDisabled={
-                    !provingClient ||
+                    !deployedQuoteService ||
                     txState === "proving" ||
                     txState === "submitting"
                   }
                   disabledReason={
-                    !provingClient
+                    !deployedQuoteService
                       ? "Connect Wallet and select Creator Identity to publish."
                       : txState === "proving" || txState === "submitting"
                         ? "Transaction in progress..."
@@ -395,7 +416,7 @@ function App() {
 
             <TransactionStatusCard
               txState={txState}
-              txHash={txHash}
+              contractAddress={contractAddress}
               errorMessage={errorMessage}
             />
           </div>
@@ -409,7 +430,7 @@ function App() {
       <WalletPicker
         isOpen={isWalletPickerOpen}
         wallets={availableWallets}
-        onSelect={handleConnect}
+        onSelect={connectWallet}
         onClose={() => setIsWalletPickerOpen(false)}
       />
     </div>

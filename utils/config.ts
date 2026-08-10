@@ -20,6 +20,10 @@ export const LOCAL_CONFIG: NetworkConfig = {
   faucet: "",
 };
 
+export const network = process.env["MIDNIGHT_NETWORK"] ?? "local";
+export const OWNER_LOCAL_SEED =
+  "0000000000000000000000000000000000000000000000000000000000000001";
+
 export const PREVIEW_CONFIG: NetworkConfig = {
   networkId: "preview",
   indexer: "https://indexer.preview.midnight.network/api/v4/graphql",
@@ -39,6 +43,8 @@ export const PREPROD_CONFIG: NetworkConfig = {
   proofServer: process.env["MIDNIGHT_PROOF_SERVER"] ?? "http://127.0.0.1:6300",
   faucet: "https://midnight-tmnight-preprod.nethermind.dev/",
 };
+
+export const PRIVATE_STATE_ID = "OwnerPrivateQuoteState";
 
 export function getConfig(): NetworkConfig {
   let network = "preview";

@@ -1,20 +1,19 @@
-import { type MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
-import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
-import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
+import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 import { levelPrivateStateProvider } from "@midnight-ntwrk/midnight-js-level-private-state-provider";
-import { type MidnightWalletProvider } from "./wallet.js";
-import { type NetworkConfig } from "./config.js";
+import { NodeZkConfigProvider } from "@midnight-ntwrk/midnight-js-node-zk-config-provider";
+import type { MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
+import type { MidnightWalletProvider } from "./walletProviders";
+import type { NetworkConfig } from "../utils/config";
+import type { QuoteOfTheDayCircuits } from "../utils/quote.types";
 
-export type QuoteOfTheDayCircuits = "post" | "publicKey";
+export type QuoteProviders = MidnightProviders<any>;
 
-export type QuoteOfTheDayProviders = MidnightProviders<any>;
-
-export function buildProviders(
+export function buildNodeProviders(
   wallet: MidnightWalletProvider,
   zkConfigPath: string,
   config: NetworkConfig,
-): QuoteOfTheDayProviders {
+): QuoteProviders {
   const zkConfigProvider = new NodeZkConfigProvider<QuoteOfTheDayCircuits>(
     zkConfigPath,
   );

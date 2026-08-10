@@ -1,6 +1,6 @@
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
-import { witnesses } from "../src/witnesses.js";
 import { Contract } from "./managed/quote-otd/contract/index.js";
+import { witnesses } from "../utils/witnesses.js";
 
 export {
   Contract,
@@ -11,7 +11,7 @@ export {
   type PureCircuits,
 } from "./managed/quote-otd/contract/index.js";
 
-export const CompiledQuoteOfTheDayContract = CompiledContract.make(
+export const CompiledQuoteContract = CompiledContract.make(
   "QuoteOfTheDayContract",
   Contract,
 ).pipe(

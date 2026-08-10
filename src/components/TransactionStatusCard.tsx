@@ -1,18 +1,20 @@
+import { copyShareLink } from "../../utils/copyShareLink";
+
 export type TxState = "idle" | "proving" | "submitting" | "success" | "error";
 
 interface TransactionStatusCardProps {
   txState: TxState;
-  txHash: string | null;
+  contractAddress: string | null;
   errorMessage: string | null;
 }
 
 export const Spinner: React.FC = () => <div className="spinner"></div>;
 
-export const TransactionStatusCard: React.FC<TransactionStatusCardProps> = ({
+export function TransactionStatusCard({
   txState,
-  txHash,
+  contractAddress,
   errorMessage,
-}) => {
+}: TransactionStatusCardProps) {
   if (txState === "idle") return null;
 
   return (
@@ -72,16 +74,13 @@ export const TransactionStatusCard: React.FC<TransactionStatusCardProps> = ({
           <div className="badge badge-success-outline flex gap-2 items-center text-lg p-3">
             <span>🔒</span> Proved without revealing your Creator Identity
           </div>
-          {txHash && (
-            <div className="flex gap-2 items-center mt-2">
-              <code className="text-xs break-all bg-code p-2 rounded">
-                {txHash}
-              </code>
+          {contractAddress && (
+            <div className="flex items-center mt-2">
               <button
-                onClick={() => navigator.clipboard.writeText(txHash)}
-                className="btn btn-sm"
+                onClick={() => copyShareLink(contractAddress)}
+                className="btn btn-sm flex gap-2"
               >
-                Copy
+                <span>🔗</span> Copy Share Link
               </button>
             </div>
           )}
@@ -98,4 +97,4 @@ export const TransactionStatusCard: React.FC<TransactionStatusCardProps> = ({
       )}
     </div>
   );
-};
+}

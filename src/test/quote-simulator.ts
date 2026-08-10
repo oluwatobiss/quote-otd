@@ -7,17 +7,17 @@ import {
 } from "@midnight-ntwrk/compact-runtime";
 import {
   Contract,
-  type Ledger,
   ledger,
+  type Ledger,
 } from "../../contracts/managed/quote-otd/contract/index.js";
-import { type QuoteOTDPrivateState, witnesses } from "../witnesses.js";
+import { type QuotePrivateState, witnesses } from "../../utils/witnesses.js";
 
-export class QuoteOTDSimulator {
-  readonly contract: Contract<QuoteOTDPrivateState>;
-  circuitContext: CircuitContext<QuoteOTDPrivateState>;
+export class QuoteSimulator {
+  readonly contract: Contract<QuotePrivateState>;
+  circuitContext: CircuitContext<QuotePrivateState>;
 
   constructor(secretKey: Uint8Array) {
-    this.contract = new Contract<QuoteOTDPrivateState>(witnesses);
+    this.contract = new Contract<QuotePrivateState>(witnesses);
     const {
       currentPrivateState,
       currentContractState,
@@ -47,7 +47,7 @@ export class QuoteOTDSimulator {
     return ledger(this.circuitContext.currentQueryContext.state);
   }
 
-  public getPrivateState(): QuoteOTDPrivateState {
+  public getPrivateState(): QuotePrivateState {
     return this.circuitContext.currentPrivateState;
   }
 
