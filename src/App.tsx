@@ -105,7 +105,7 @@ function App() {
         .contractStateObservable(contract.deployTxData.public.contractAddress, {
           type: "latest",
         })
-        .subscribe((contractState: any) => {
+        .subscribe((contractState) => {
           const state = ledger(contractState.data);
           setQuote(state.quoteOfTheDay);
           setOwnerPublicKey(toHex(state.owner));
@@ -129,7 +129,7 @@ function App() {
       setWalletAddress(
         (await connectedWallet.getUnshieldedAddress()).unshieldedAddress,
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setErrorMessage(
         "Couldn't connect to your wallet. Please unlock it and try again.",
@@ -179,7 +179,7 @@ function App() {
       setTxState("submitting");
       setTxState("success");
       clearIdentity();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Publish failed:", err);
       setErrorMessage("Proof generation or transaction failed.");
       setTxState("error");
@@ -199,7 +199,7 @@ function App() {
       if (param) {
         targetContract = param;
       }
-    } catch (e) {
+    } catch (_e) {
       // Not a valid URL, treat as direct contract ID if they pasted that instead
     }
 
@@ -250,7 +250,7 @@ function App() {
           setDeployedQuoteService(
             await QuoteOTDClient.build(contract, providers),
           );
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error("Failed to initialize deployed quote service:", err);
           setErrorMessage("Failed to initialize deployed quote service.");
         }

@@ -46,8 +46,10 @@ export function CreatorIdentitySelector({
         }
 
         onIdentitySelected(parsed);
-      } catch (err: any) {
-        setError(err.message || "Failed to parse identity file.");
+      } catch (err: unknown) {
+        setError(
+          err instanceof Error ? err.message : "Failed to parse identity file.",
+        );
       }
 
       // Clear file input

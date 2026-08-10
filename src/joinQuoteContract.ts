@@ -1,13 +1,31 @@
 import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import type { MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
-import { CompiledQuoteContract } from "../contracts/index";
+import { CompiledQuoteContract, Contract } from "../contracts/index";
+import * as Quote from "../contracts/managed/quote-otd/contract/index";
 import { PRIVATE_STATE_ID } from "../utils/config.js";
 import type { CreatorIdentity } from "../utils/quote.types";
-import { createQuotePrivateState } from "../utils/witnesses";
+import {
+  createQuotePrivateState,
+  type QuotePrivateState,
+} from "../utils/witnesses";
+
+type QuoteContract = Contract<
+  QuotePrivateState,
+  Quote.Witnesses<QuotePrivateState>
+>;
+type BBoardCircuitKeys = Exclude<
+  keyof QuoteContract["impureCircuits"],
+  number | symbol
+>;
+type QuoteProviders = MidnightProviders<
+  BBoardCircuitKeys,
+  typeof PRIVATE_STATE_ID,
+  QuotePrivateState
+>;
 
 // --- PROVIDER BUILDER ---
 export async function joinQuoteContract(
-  providers: MidnightProviders<any>,
+  providers: QuoteProviders,
   contractAddress: string,
   creatorId: CreatorIdentity | null,
 ) {
