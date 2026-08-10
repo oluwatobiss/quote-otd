@@ -199,7 +199,7 @@ function App() {
       if (param) {
         targetContract = param;
       }
-    } catch (_e) {
+    } catch {
       // Not a valid URL, treat as direct contract ID if they pasted that instead
     }
 
