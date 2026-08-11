@@ -216,6 +216,7 @@ function App() {
   function goHome() {
     setContractAddress(null);
     setOwnerPublicKey(null);
+    setSharedLinkInput("");
     window.history.pushState(
       { path: window.location.pathname },
       "",
