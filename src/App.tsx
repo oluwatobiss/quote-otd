@@ -424,7 +424,7 @@ function App() {
       </main>
 
       <footer className="mt-12 text-center opacity-70 text-xs">
-        <p>Inspiring the world anonymously. Powered by Midnight.</p>
+        <p>Inspiring the world. Respecting privacy. Powered by Midnight.</p>
       </footer>
 
       <WalletPicker
