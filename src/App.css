@@ -99,6 +99,15 @@
 .w-full {
   width: 100%;
 }
+.min-h-screen {
+  min-height: 100vh;
+}
+.flex-1 {
+  flex: 1 1 0%;
+}
+.mt-auto {
+  margin-top: auto;
+}
 .text-sm {
   font-size: 0.875rem;
 }
