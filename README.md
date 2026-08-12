@@ -635,4 +635,4 @@ Quote of the Day uses Compact and Midnight's privacy-preserving proving architec
 
 ## Demo Video
 
-Pending.
+[Watch Demo on YouTube](https://youtu.be/sluZUxhLNFk)
