@@ -45,7 +45,7 @@ export function WalletPicker({
           >
             <p className="text-sm">No Midnight wallets detected.</p>
             <p className="text-xs opacity-50 mt-2">
-              Please install a Midnight compatible extension (e.g. Lace) to
+              Please install a Midnight compatible extension (e.g. 1AM) to
               continue.
             </p>
           </div>

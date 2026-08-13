@@ -37,7 +37,7 @@ export function WalletCard({
       ) : (
         <div className="flex-col gap-4">
           <p className="text-sm opacity-70">
-            Connect a Midnight compatible wallet (such as Lace) to manage
+            Connect a Midnight compatible wallet (such as 1AM) to manage
             contracts and publish zero-knowledge quotes.
           </p>
           <div className="flex gap-2 mt-2">
