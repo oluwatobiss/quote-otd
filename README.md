@@ -15,7 +15,8 @@ Quote of the Day allows a creator to publish one quote for each day while provin
 
 ## Live Demo
 
-[Try Quote of the Day](https://quote-otd.netlify.app)
+- [Try Quote of the Day](https://quote-otd.netlify.app)
+- [Watch the DApp's Demo on YouTube](https://youtu.be/sluZUxhLNFk)
 
 ## Contract
 
@@ -23,7 +24,7 @@ Quote of the Day allows a creator to publish one quote for each day while provin
 
 | Network | Contract Address                                                   |
 | ------- | ------------------------------------------------------------------ |
-| Preview | `18b231e4c429c759f07b7c93e6d44fd242d25ebcd43a2b62976a5a69aa0a50d9` |
+| Preview | `c68f314ffcf61644323c13ec6fa420a10b81bc45f569137bfa775bfd73bf8153` |
 
 The application currently uses the Midnight Preview network.
 
@@ -587,9 +588,9 @@ Quote of the Day is intentionally small, but it demonstrates several important M
 
 The goal is not simply to publish quotes. It is to allow quote publishers to prove their authorization to publish quotes through the dApp without exposing the private data used to generate the proof.
 
-## Initial Idea
+## Product Proposal
 
-A privacy-preserving certification verifier for Midnight Academy graduates.
+See PROPOSAL.md
 
 ## Screenshots
 
@@ -632,7 +633,3 @@ Quote of the Day is designed so that creator private data used for authorization
 Built with the [Midnight Network](https://midnight.network) and its privacy-preserving smart-contract technology.
 
 Quote of the Day uses Compact and Midnight's privacy-preserving proving architecture to allow publishers to verify their authorization without exposing the underlying private data used to generate the proof.
-
-## Demo Video
-
-[Watch Demo on YouTube](https://youtu.be/sluZUxhLNFk)
