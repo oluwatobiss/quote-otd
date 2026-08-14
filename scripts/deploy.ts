@@ -107,9 +107,11 @@ async function main() {
   saveDeploymentInfo(creatorId);
 
   logger.info(`Contract Address: ${contractAddress}`);
-  logger.info(`Generated Creator Identity: .midnight/creator-id.quoteotd`);
   logger.info(
-    `🚨 IMPORTANT: Store 'creator-id.quoteotd' securely! It represents ownership of your contract and is required for publishing new quotes. Do not share it with anyone. Do not commit it to version control.`,
+    `Generated Creator Identity: .midnight/creator-id.${network}.quoteotd`,
+  );
+  logger.info(
+    `🚨 IMPORTANT: Store 'creator-id.${network}.quoteotd' securely! It represents ownership of your contract and is required for publishing new quotes. Do not share it with anyone. Do not commit it to version control.`,
   );
   logger.info(
     "─── Deployment Complete! ───────────────────────────────────────",

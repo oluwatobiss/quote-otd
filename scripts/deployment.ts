@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { network } from "../utils/config";
 import { randomBytes } from "../utils/crypto.js";
 
 const MIDNIGHT_DIR = resolve(process.cwd(), ".midnight");
-const DEPLOYMENT_FILE = resolve(MIDNIGHT_DIR, "creator-id.quoteotd");
+const DEPLOYMENT_FILE = resolve(MIDNIGHT_DIR, `creator-id.${network}.quoteotd`);
 
 export interface DeploymentInfo {
   secretKey: Uint8Array<ArrayBufferLike>;
