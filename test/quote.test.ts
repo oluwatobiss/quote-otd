@@ -13,17 +13,17 @@ import {
   waitForFunds,
 } from "@midnight-ntwrk/testkit-js";
 import { QuoteSimulator } from "./quote-simulator";
-import { CompiledQuoteContract, Contract, ledger } from "../../contracts/index";
+import { CompiledQuoteContract, Contract, ledger } from "../contracts/index";
 import {
   buildNodeProviders,
   type QuoteProviders,
-} from "../../providers/buildNodeProviders";
-import { MidnightWalletProvider } from "../../providers/walletProviders";
-import { getConfig, network, PRIVATE_STATE_ID } from "../../utils/config";
-import { randomBytes } from "../../utils/crypto";
-import { resolveSecret } from "../../utils/resolveSecret";
-import { syncWallet } from "../../utils/wallet";
-import { createQuotePrivateState } from "../../utils/witnesses";
+} from "../providers/buildNodeProviders";
+import { MidnightWalletProvider } from "../providers/walletProviders";
+import { getConfig, network, PRIVATE_STATE_ID } from "../utils/config";
+import { randomBytes } from "../utils/crypto";
+import { resolveSecret } from "../utils/resolveSecret";
+import { syncWallet } from "../utils/wallet";
+import { createQuotePrivateState } from "../utils/witnesses";
 
 // Required for GraphQL subscriptions in Node.js
 // @ts-expect-error WebSocket global assignment for apollo

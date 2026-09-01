@@ -16,7 +16,7 @@ export default defineConfig({
     testTimeout: 10 * 60_000,
     hookTimeout: isRemote ? 90 * 60_000 : 15 * 60_000,
     env: envFromFile,
-    include: ["src/**/*.test.ts"],
+    include: ["test/**/*.test.ts"],
     reporters: ["default"],
     sequence: { concurrent: false },
   },
