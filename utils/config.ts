@@ -47,19 +47,25 @@ export const PREPROD_CONFIG: NetworkConfig = {
 export const PRIVATE_STATE_ID = "OwnerPrivateQuoteState";
 
 export function getConfig(): NetworkConfig {
-  let network = "preview";
-  if (typeof process !== "undefined" && process.env) {
-    network = process.env.MIDNIGHT_NETWORK ?? "preview";
-  } else if (typeof import.meta !== "undefined" && (import.meta as any).env) {
-    // Vite uses import.meta.env
-    network = (import.meta as any).env.VITE_MIDNIGHT_NETWORK ?? "preview";
+  // Check import.meta.env first: Vite statically replaces these at build/dev
+  // time, making them the authoritative source in the browser. The process.env
+  // stub Vite provides is always truthy but carries no runtime values, so
+  // checking it first causes the network to always fall back to the default.
+  let resolvedNetwork = "local";
+  if (
+    typeof import.meta !== "undefined" &&
+    (import.meta as any).env?.VITE_MIDNIGHT_NETWORK
+  ) {
+    resolvedNetwork = (import.meta as any).env.VITE_MIDNIGHT_NETWORK;
+  } else if (typeof process !== "undefined" && process.env?.MIDNIGHT_NETWORK) {
+    resolvedNetwork = process.env.MIDNIGHT_NETWORK;
   }
 
-  if (network === "local") return LOCAL_CONFIG;
-  if (network === "preview") return PREVIEW_CONFIG;
-  if (network === "preprod") return PREPROD_CONFIG;
+  if (resolvedNetwork === "local") return LOCAL_CONFIG;
+  if (resolvedNetwork === "preview") return PREVIEW_CONFIG;
+  if (resolvedNetwork === "preprod") return PREPROD_CONFIG;
 
   throw new Error(
-    `Unknown network: ${network}. Supported: 'local', 'preview', 'preprod'.`,
+    `Unknown network: ${resolvedNetwork}. Supported: 'local', 'preview', 'preprod'.`,
   );
 }

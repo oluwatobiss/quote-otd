@@ -1,4 +1,5 @@
 import * as Rx from "rxjs";
+import { getConfig } from "./config";
 import type {
   ConnectedAPI,
   InitialAPI,
@@ -29,14 +30,9 @@ export async function connectBrowserWallet(
 ): Promise<ConnectedAPI> {
   console.log("Connect button clicked");
 
-  // Connect to the specified network (use 'undeployed' for local development)
-  // const connectedApi = await wallet.connect("undeployed");
-  const connectedApi = await wallet.connect("preview");
-  // const connectedApi = await wallet.connect("preprod");
-
-  // Optional: Get the service URI configuration
-  const serviceUriConfig = await connectedApi.getConfiguration();
-  console.log("Service URI Config:", serviceUriConfig);
+  // Connect to the configured network
+  const config = getConfig();
+  const connectedApi = await wallet.connect(config.networkId);
 
   const connectionStatus = await connectedApi.getConnectionStatus();
   if (connectionStatus.status === "connected") {
@@ -85,7 +81,7 @@ export async function connectBrowserWallet(
         if (typeof walletHash.txHash === "string") return walletHash.txHash;
         if (typeof walletHash.hash === "string") return walletHash.hash;
       }
-      const hash = tx.transactionHash();
+      const hash = tx.identifiers()[0];
       return typeof hash === "string" ? hash : toHex(hash);
     };
 

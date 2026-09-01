@@ -1,8 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Buffer } from "buffer";
-import App from "./App.tsx";
-// @ts-expect-error - allow side-effect CSS import without type declarations
+import App from "./App";
 import "./index.css";
 
 // Polyfill Buffer for Midnight SDK

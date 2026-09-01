@@ -17,6 +17,7 @@ import {
 } from "../providers/buildNodeProviders";
 import { MidnightWalletProvider } from "../providers/walletProviders";
 import { getConfig, network, PRIVATE_STATE_ID } from "../utils/config";
+import { buildCreatorIdentity } from "../utils/creatorIdentity.js";
 import { resolveSecret } from "../utils/resolveSecret";
 import { syncWallet } from "../utils/wallet";
 import { createQuotePrivateState } from "../utils/witnesses";
@@ -94,15 +95,12 @@ async function main() {
   logger.info("✅ Contract deployed successfully!");
 
   const contractAddress = deployed.deployTxData.public.contractAddress;
-  const ownerPublicKeyHex = "unknown";
-  const creatorId = {
-    version: 1,
+
+  const creatorId = buildCreatorIdentity(
     contractAddress,
     network,
-    ownerPublicKey: ownerPublicKeyHex,
-    secretKey: deploymentInfo.secretKey,
-    createdAt: new Date().toISOString(),
-  };
+    deploymentInfo.secretKey,
+  );
 
   saveDeploymentInfo(creatorId);
 

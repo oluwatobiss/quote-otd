@@ -6,6 +6,7 @@ import type {
 import { toHex } from "@midnight-ntwrk/midnight-js-utils";
 import { CreatorIdentitySelector } from "./components/CreatorIdentitySelector";
 import { CurrentQuoteCard } from "./components/CurrentQuoteCard";
+import { DeployRoute } from "./components/DeployRoute";
 import { Header } from "./components/Header";
 import { PublishQuoteCard } from "./components/PublishQuoteCard";
 import { SkeletonText } from "./components/Skeleton";
@@ -16,13 +17,12 @@ import {
 import { WalletCard } from "./components/WalletCard";
 import { WalletPicker } from "./components/WalletPicker";
 import { joinQuoteContract } from "./joinQuoteContract";
-import { QuoteOTDClient, DeployedQuoteService } from "./quoteOTDClient";
+import { type DeployedQuoteService, QuoteOTDClient } from "./quoteOTDClient";
 import { ledger } from "../contracts/managed/quote-otd/contract/index";
 import { buildBrowserProviders } from "../providers/buildBrowserProviders";
 import { copyShareLink } from "../utils/copyShareLink";
 import type { CreatorIdentity } from "../utils/quote.types";
 import { connectBrowserWallet, listWallets } from "../utils/wallet";
-// @ts-expect-error - allow side-effect CSS import without type declarations
 import "./App.css";
 
 function getContractParam(): string | null {
@@ -259,6 +259,30 @@ function App() {
       init();
     }
   }, [wallet, identity, deployedQuoteService]);
+
+  const isDeployRoute = window.location.pathname === "/deploy";
+  const enableDeployRoute = import.meta.env.VITE_ENABLE_DEPLOY_ROUTE === "true";
+
+  if (isDeployRoute) {
+    if (!enableDeployRoute) {
+      return (
+        <div className="container mx-auto max-w-3xl flex-col min-h-screen items-center justify-center">
+          <h2 className="text-error">404 Not Found</h2>
+        </div>
+      );
+    }
+    return (
+      <div className="container mx-auto max-w-3xl flex-col min-h-screen">
+        <Header />
+        <main className="flex-col flex-1 gap-6 w-full">
+          <DeployRoute />
+        </main>
+        <footer className="mt-auto text-center opacity-70 text-xs">
+          <p>Inspiring the world. Respecting privacy. Powered by Midnight.</p>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-3xl flex-col min-h-screen">
