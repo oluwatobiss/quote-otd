@@ -43,6 +43,20 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Compile and test contract
-        run: |
-          npm run ci
+      - name: Lint, compile, and build
+        run: npm run ci
+
+      - name: Start local Midnight environment
+        run: npm run env:up
+
+      - name: Run Vitest suite
+        run: npm run test:local
+        timeout-minutes: 20
+
+      - name: Show environment logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop local Midnight environment
+        if: always()
+        run: npm run env:down
