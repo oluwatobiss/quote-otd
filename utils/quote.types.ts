@@ -1,6 +1,7 @@
 export interface CreatorIdentity {
   version: number;
   contractAddress: string;
+  network: string;
   ownerPublicKey: string;
   secretKey: number[];
   createdAt: string;

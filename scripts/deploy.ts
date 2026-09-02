@@ -17,6 +17,7 @@ import {
 } from "../providers/buildNodeProviders";
 import { MidnightWalletProvider } from "../providers/walletProviders";
 import { getConfig, network, PRIVATE_STATE_ID } from "../utils/config";
+import { buildCreatorIdentity } from "../utils/creatorIdentity.js";
 import { resolveSecret } from "../utils/resolveSecret";
 import { syncWallet } from "../utils/wallet";
 import { createQuotePrivateState } from "../utils/witnesses";
@@ -94,22 +95,21 @@ async function main() {
   logger.info("✅ Contract deployed successfully!");
 
   const contractAddress = deployed.deployTxData.public.contractAddress;
-  const ownerPublicKeyHex = "unknown";
-  const creatorId = {
-    version: 1,
+
+  const creatorId = buildCreatorIdentity(
     contractAddress,
     network,
-    ownerPublicKey: ownerPublicKeyHex,
-    secretKey: deploymentInfo.secretKey,
-    createdAt: new Date().toISOString(),
-  };
+    deploymentInfo.secretKey,
+  );
 
   saveDeploymentInfo(creatorId);
 
   logger.info(`Contract Address: ${contractAddress}`);
-  logger.info(`Generated Creator Identity: .midnight/creator-id.quoteotd`);
   logger.info(
-    `🚨 IMPORTANT: Store 'creator-id.quoteotd' securely! It represents ownership of your contract and is required for publishing new quotes. Do not share it with anyone. Do not commit it to version control.`,
+    `Generated Creator Identity: .midnight/creator-id.${network}.quoteotd`,
+  );
+  logger.info(
+    `🚨 IMPORTANT: Store 'creator-id.${network}.quoteotd' securely! It represents ownership of your contract and is required for publishing new quotes. Do not share it with anyone. Do not commit it to version control.`,
   );
   logger.info(
     "─── Deployment Complete! ───────────────────────────────────────",

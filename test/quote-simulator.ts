@@ -9,8 +9,8 @@ import {
   Contract,
   ledger,
   type Ledger,
-} from "../../contracts/managed/quote-otd/contract/index.js";
-import { type QuotePrivateState, witnesses } from "../../utils/witnesses.js";
+} from "../contracts/managed/quote-otd/contract/index.js";
+import { type QuotePrivateState, witnesses } from "../utils/witnesses.js";
 
 export class QuoteSimulator {
   readonly contract: Contract<QuotePrivateState>;

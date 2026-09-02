@@ -20,13 +20,12 @@ Quote of the Day allows a creator to publish one quote for each day while provin
 
 ## Contract
 
-### Preview Network
-
 | Network | Contract Address                                                   |
 | ------- | ------------------------------------------------------------------ |
 | Preview | `c68f314ffcf61644323c13ec6fa420a10b81bc45f569137bfa775bfd73bf8153` |
+| Preprod | `060b5b841b2c27605aea29bb43d737712cf7a313e0e5a13c6ae2837b275ce251` |
 
-The application currently uses the Midnight Preview network.
+The application currently uses the Midnight Preview and Preprod networks.
 
 ## How It Works
 
@@ -264,6 +263,7 @@ Readers can access the currently published quote without possessing the creator'
 
 - Midnight Network
 - Preview Network
+- Preprod Network
 
 ### Wallet
 
@@ -506,7 +506,7 @@ The pipeline performs the project's required quality checks, including:
 4. Building the application.
 5. Running the project's validation/test workflow where applicable.
 6. Running security/scanning checks.
-7. Building the production/preview frontend used for deployment.
+7. Building the production frontend used for deployment.
 
 This means a pull request is checked automatically rather than relying solely on manual local testing. The CI workflow helps detect:
 

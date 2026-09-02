@@ -13,17 +13,17 @@ import {
   waitForFunds,
 } from "@midnight-ntwrk/testkit-js";
 import { QuoteSimulator } from "./quote-simulator";
-import { CompiledQuoteContract, Contract, ledger } from "../../contracts/index";
+import { CompiledQuoteContract, Contract, ledger } from "../contracts/index";
 import {
   buildNodeProviders,
   type QuoteProviders,
-} from "../../providers/buildNodeProviders";
-import { MidnightWalletProvider } from "../../providers/walletProviders";
-import { getConfig, network, PRIVATE_STATE_ID } from "../../utils/config";
-import { randomBytes } from "../../utils/crypto";
-import { resolveSecret } from "../../utils/resolveSecret";
-import { syncWallet } from "../../utils/wallet";
-import { createQuotePrivateState } from "../../utils/witnesses";
+} from "../providers/buildNodeProviders";
+import { MidnightWalletProvider } from "../providers/walletProviders";
+import { getConfig, network, PRIVATE_STATE_ID } from "../utils/config";
+import { randomBytes } from "../utils/crypto";
+import { resolveSecret } from "../utils/resolveSecret";
+import { syncWallet } from "../utils/wallet";
+import { createQuotePrivateState } from "../utils/witnesses";
 
 // Required for GraphQL subscriptions in Node.js
 // @ts-expect-error WebSocket global assignment for apollo
@@ -42,6 +42,43 @@ const logger = pino({
   level: process.env["LOG_LEVEL"] ?? "info",
   transport: { target: "pino-pretty" },
 });
+
+const LOCAL_DUST_READY_TIMEOUT_MS = 3 * 60_000;
+const LOCAL_DUST_RETRY_INTERVAL_MS = 5_000;
+
+function isDustBalancingError(error: unknown): boolean {
+  return (
+    error instanceof Error && /could not balance dust/i.test(error.message)
+  );
+}
+
+async function withLocalDustRetry<T>(operation: () => Promise<T>): Promise<T> {
+  const deadline = Date.now() + LOCAL_DUST_READY_TIMEOUT_MS;
+
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      const shouldRetry = network === "local" && isDustBalancingError(error);
+
+      if (!shouldRetry || Date.now() >= deadline) {
+        throw error;
+      }
+
+      logger.warn(
+        {
+          attempt,
+          retryInMs: LOCAL_DUST_RETRY_INTERVAL_MS,
+        },
+        "Local DUST is not spendable yet; retrying deployment",
+      );
+
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, LOCAL_DUST_RETRY_INTERVAL_MS);
+      });
+    }
+  }
+}
 
 describe(`Quote of The Day Contract (${network})`, () => {
   let wallet: MidnightWalletProvider;
@@ -63,42 +100,72 @@ describe(`Quote of The Day Contract (${network})`, () => {
     return ledger(state!.data);
   }
 
-  beforeAll(async () => {
-    setNetworkId(config.networkId);
+  beforeAll(
+    async () => {
+      setNetworkId(config.networkId);
 
-    const envConfig: EnvironmentConfiguration = {
-      walletNetworkId: config.networkId,
-      networkId: config.networkId,
-      indexer: config.indexer,
-      indexerWS: config.indexerWS,
-      node: config.node,
-      nodeWS: config.nodeWS,
-      faucet: config.faucet,
-      proofServer: config.proofServer,
-    };
+      const envConfig: EnvironmentConfiguration = {
+        walletNetworkId: config.networkId,
+        networkId: config.networkId,
+        indexer: config.indexer,
+        indexerWS: config.indexerWS,
+        node: config.node,
+        nodeWS: config.nodeWS,
+        faucet: config.faucet,
+        proofServer: config.proofServer,
+      };
 
-    wallet = await MidnightWalletProvider.build(logger, envConfig, secret);
-    await wallet.start();
-    await syncWallet(logger, wallet.wallet, syncTimeoutMs);
+      wallet = await MidnightWalletProvider.build(logger, envConfig, secret);
+      await wallet.start();
+      await syncWallet(logger, wallet.wallet, syncTimeoutMs);
 
-    if (isRemote) {
-      // NIGHT→DUST registration. Seed is pre-funded via the faucet page; idempotent.
-      const nightBalance = await waitForFunds(
-        wallet.wallet,
-        envConfig,
-        false,
-        wallet.unshieldedKeystore,
+      if (isRemote) {
+        // NIGHT→DUST registration. Seed is pre-funded via the faucet page;
+        // registration is idempotent.
+        const nightBalance = await waitForFunds(
+          wallet.wallet,
+          envConfig,
+          false,
+          wallet.unshieldedKeystore,
+        );
+
+        logger.info(`Wallet NIGHT balance on '${network}': ${nightBalance}`);
+      }
+
+      providers = buildNodeProviders(
+        wallet,
+        "contracts/managed/quote-otd",
+        config,
       );
-      logger.info(`Wallet NIGHT balance on '${network}': ${nightBalance}`);
-    }
 
-    providers = buildNodeProviders(
-      wallet,
-      "contracts/managed/quote-otd",
-      config,
-    );
-    logger.info(`Providers initialized on '${network}'. Ready to test!`);
-  });
+      logger.info(`Providers initialized on '${network}'.`);
+
+      /*
+       * Create this once so every local retry uses the same owner identity.
+       * Failed balancing attempts do not store the private state because the
+       * deployment has not succeeded.
+       */
+      const initialPrivateState = createQuotePrivateState(randomBytes(32));
+
+      logger.info("Creating private state and deploying contract...");
+
+      const deployed: DeployedContract<Contract> = await withLocalDustRetry(
+        () =>
+          deployContract<Contract>(providers, {
+            compiledContract: CompiledQuoteContract,
+            privateStateId: PRIVATE_STATE_ID,
+            initialPrivateState,
+          }),
+      );
+
+      logger.info(`Setting the contract address...`);
+
+      contractAddress = deployed.deployTxData.public.contractAddress;
+
+      logger.info(`Contract deployed at: ${contractAddress}`);
+    },
+    syncTimeoutMs + LOCAL_DUST_READY_TIMEOUT_MS + 60_000,
+  );
 
   afterAll(async () => {
     if (wallet) {
@@ -108,21 +175,6 @@ describe(`Quote of The Day Contract (${network})`, () => {
   });
 
   it("deploys the contract", async () => {
-    logger.info(`Creating private state...`);
-
-    const deployed: DeployedContract<Contract> = await deployContract<Contract>(
-      providers,
-      {
-        compiledContract: CompiledQuoteContract,
-        privateStateId: PRIVATE_STATE_ID,
-        initialPrivateState: createQuotePrivateState(randomBytes(32)),
-      },
-    );
-
-    logger.info(`Setting the contract address...`);
-    contractAddress = deployed.deployTxData.public.contractAddress;
-    logger.info(`Contract deployed at: ${contractAddress}`);
-
     expect(contractAddress).toBeDefined();
     expect(contractAddress.length).toBeGreaterThan(0);
 
