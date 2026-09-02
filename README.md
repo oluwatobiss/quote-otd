@@ -22,10 +22,9 @@ Quote of the Day allows a creator to publish one quote for each day while provin
 
 | Network | Contract Address                                                   |
 | ------- | ------------------------------------------------------------------ |
-| Preview | `c68f314ffcf61644323c13ec6fa420a10b81bc45f569137bfa775bfd73bf8153` |
 | Preprod | `69b75171dc7a9f7593bd85044a420d942483743e4254135e938c3eb2b22f0b3a` |
 
-The application currently uses the Midnight Preview and Preprod networks.
+The application currently uses the Midnight Preprod network.
 
 ## How It Works
 
@@ -262,7 +261,6 @@ Readers can access the currently published quote without possessing the creator'
 ### Blockchain
 
 - Midnight Network
-- Preview Network
 - Preprod Network
 
 ### Wallet
