@@ -42,11 +42,19 @@ services:
     ports:
       - "127.0.0.1:9944:9944"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9944/health"]
+      # The indexer requires block 1 to exist when it starts.
+      test:
+        - CMD-SHELL
+        - >-
+          curl -sf -X POST
+          -H "Content-Type: application/json"
+          -d '{"jsonrpc":"2.0","id":1,"method":"chain_getBlockHash","params":[1]}'
+          http://localhost:9944
+          | grep -q '"result":"0x'
       interval: 2s
       timeout: 5s
-      retries: 20
-      start_period: 5s
+      retries: 30
+      start_period: 20s
     environment:
       CFG_PRESET: "dev"
       SIDECHAIN_BLOCK_BENEFICIARY: "04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e"
