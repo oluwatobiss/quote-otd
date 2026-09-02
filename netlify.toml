@@ -4,7 +4,7 @@
     export PATH="$HOME/.compact/bin:$PATH" &&
     compact update 0.31.0 &&
     compact compile --version &&
-    npm run build:preview
+    npm run build
   """
   publish = "dist"
 
