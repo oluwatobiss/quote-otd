@@ -314,7 +314,7 @@ The project is broadly organized around the following areas:
 │   ├── deploy.ts
 │   └── deployment.ts
 │
-├── src/
+├── app/
 │   ├── App.css
 │   ├── App.tsx
 │   ├── assets/

@@ -22,7 +22,7 @@
     "dev:deploy:preview": "VITE_ENABLE_DEPLOY_ROUTE=true VITE_MIDNIGHT_NETWORK=preview npm run dev",
     "env:down": "docker compose down",
     "env:up": "docker compose up -d --wait",
-    "lint": "eslint src",
+    "lint": "eslint app",
     "netlify:build": "npx netlify build",
     "prepack": "npm run build",
     "preview": "vite preview",
