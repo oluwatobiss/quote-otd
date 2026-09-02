@@ -1,5 +1,7 @@
 # Quote of the Day
 
+> This project is built on the Midnight Network.
+
 <div>
 
 [![Built on Midnight](https://img.shields.io/badge/Built_on-Midnight-000000?style=for-the-badge)](https://midnight.network/)
