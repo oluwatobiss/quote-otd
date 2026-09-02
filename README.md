@@ -23,7 +23,7 @@ Quote of the Day allows a creator to publish one quote for each day while provin
 | Network | Contract Address                                                   |
 | ------- | ------------------------------------------------------------------ |
 | Preview | `c68f314ffcf61644323c13ec6fa420a10b81bc45f569137bfa775bfd73bf8153` |
-| Preprod | `060b5b841b2c27605aea29bb43d737712cf7a313e0e5a13c6ae2837b275ce251` |
+| Preprod | `69b75171dc7a9f7593bd85044a420d942483743e4254135e938c3eb2b22f0b3a` |
 
 The application currently uses the Midnight Preview and Preprod networks.
 
