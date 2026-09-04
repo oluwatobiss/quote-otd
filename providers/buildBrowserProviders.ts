@@ -112,6 +112,16 @@ export async function buildBrowserProviders(
   );
   const config = getConfig();
 
+  const proofServerUrl = new URL(config.proofServer);
+  if (
+    proofServerUrl.hostname !== "127.0.0.1" &&
+    proofServerUrl.hostname !== "localhost"
+  ) {
+    throw new Error(
+      `Privacy violation: Proof server must be a local loopback address. Found: ${config.proofServer}`,
+    );
+  }
+
   setNetworkId(config.networkId);
   return {
     providers: {
