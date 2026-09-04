@@ -24,6 +24,9 @@ export function DeployRoute() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Guard for concurrent deployments
+  const [isDeploying, setIsDeploying] = useState(false);
+
   const [txState, setTxState] = useState<TxState>("idle");
   const [deploymentResult, setDeploymentResult] = useState<{
     contractAddress: string;
@@ -43,6 +46,9 @@ export function DeployRoute() {
       setIsWalletPickerOpen(false);
       setIsConnecting(true);
       setErrorMessage(null);
+      // Reset stale state on new wallet connection
+      setDeploymentResult(null);
+      setTxState("idle");
 
       const connectedWallet = await connectBrowserWallet(selectedWallet);
       setWallet(connectedWallet);
@@ -51,17 +57,20 @@ export function DeployRoute() {
       setErrorMessage(
         "Couldn't connect to your wallet. Please unlock it and try again.",
       );
+      setWallet(null);
     } finally {
       setIsConnecting(false);
     }
   }
 
   async function performDeployment() {
-    if (!wallet) return;
+    if (!wallet || isDeploying) return;
+
+    setIsDeploying(true);
+    setErrorMessage(null);
 
     try {
-      setTxState("proving");
-      setErrorMessage(null);
+      setTxState("preparing");
 
       // Network ID validation
       const walletConfig = await wallet.getConfiguration();
@@ -76,7 +85,7 @@ export function DeployRoute() {
         await fetch(config.proofServer, { method: "OPTIONS" });
       } catch {
         throw new Error(
-          "Local proof server unavailable. Start the Midnight proof server on 127.0.0.1:6300 and try again.",
+          "Local proof server unavailable. Start the Midnight proof server on 127.0.0.1:6300 (e.g. via Docker) and try again.",
         );
       }
 
@@ -85,6 +94,8 @@ export function DeployRoute() {
       const { providers } = await buildBrowserProviders(wallet);
       const initialPrivateState = createQuotePrivateState(secretKey);
 
+      setTxState("proving");
+
       // Deploy Contract (calls proveTx, balanceTx, submitTx)
       const deployed = await deployContract(providers, {
         compiledContract: CompiledQuoteContract,
@@ -92,6 +103,7 @@ export function DeployRoute() {
         initialPrivateState,
       });
 
+      setTxState("submitting");
       const contractAddress = deployed.deployTxData.public.contractAddress;
 
       const creatorId = buildCreatorIdentity(
@@ -113,6 +125,8 @@ export function DeployRoute() {
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMessage(msg);
       setTxState("error");
+    } finally {
+      setIsDeploying(false);
     }
   }
 
@@ -171,24 +185,20 @@ export function DeployRoute() {
         <div className="flex-col gap-4 text-center">
           <button
             onClick={performDeployment}
-            disabled={txState === "proving" || txState === "submitting"}
+            disabled={isDeploying}
             className="btn btn-primary w-full"
           >
-            {txState === "proving" || txState === "submitting"
-              ? "Deploying..."
-              : "Deploy Contract"}
+            {isDeploying ? "Deploying..." : "Deploy Contract"}
           </button>
-
-          {(txState === "proving" || txState === "submitting") && (
+          {isDeploying && (
             <p className="opacity-70 text-sm mt-2">
-              {txState === "proving"
-                ? "Generating ZK Proof locally..."
-                : "Balancing & Submitting..."}
+              {txState === "preparing" && "Validating environment..."}
+              {txState === "proving" && "Generating ZK Proof locally..."}
+              {txState === "submitting" && "Balancing & Submitting..."}
             </p>
           )}
         </div>
       )}
-
       <WalletPicker
         isOpen={isWalletPickerOpen}
         wallets={availableWallets}

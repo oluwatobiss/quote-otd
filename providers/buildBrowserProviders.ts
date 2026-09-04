@@ -112,13 +112,23 @@ export async function buildBrowserProviders(
   );
   const config = getConfig();
 
+  const proofServerUrl = new URL(config.proofServer);
+  if (
+    proofServerUrl.hostname !== "127.0.0.1" &&
+    proofServerUrl.hostname !== "localhost"
+  ) {
+    throw new Error(
+      `Privacy violation: Proof server must be a local loopback address. Found: ${config.proofServer}`,
+    );
+  }
+
   setNetworkId(config.networkId);
   return {
     providers: {
       privateStateProvider: privateStateProvider as any,
       publicDataProvider: indexerPublicDataProvider(
-        config.indexer,
-        config.indexerWS,
+        walletConfig ? walletConfig.indexerUri : config.indexer,
+        walletConfig ? walletConfig.indexerWsUri : config.indexerWS,
       ),
       zkConfigProvider: zkConfigProvider as any,
       proofProvider: httpClientProofProvider(
