@@ -1,6 +1,14 @@
 import { copyShareLink } from "../../utils/copyShareLink";
 
-export type TxState = "idle" | "proving" | "submitting" | "success" | "error";
+export type TxState =
+  | "idle"
+  | "preparing"
+  | "proving"
+  | "balancing"
+  | "signing"
+  | "submitting"
+  | "success"
+  | "error";
 
 interface TransactionStatusCardProps {
   txState: TxState;
