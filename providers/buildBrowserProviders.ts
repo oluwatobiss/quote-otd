@@ -117,8 +117,8 @@ export async function buildBrowserProviders(
     providers: {
       privateStateProvider: privateStateProvider as any,
       publicDataProvider: indexerPublicDataProvider(
-        config.indexer,
-        config.indexerWS,
+        walletConfig ? walletConfig.indexerUri : config.indexer,
+        walletConfig ? walletConfig.indexerWsUri : config.indexerWS,
       ),
       zkConfigProvider: zkConfigProvider as any,
       proofProvider: httpClientProofProvider(
